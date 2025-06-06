@@ -58,7 +58,12 @@ function App() {
                 localStorage.setItem('spotify_expires_at', expiresAt.toString())
               }
               window.history.replaceState({}, document.title, '/')
+            } else {
+              alert('Failed to log in to Spotify. Please try again. ' + (data.error_description || data.error || ''))
             }
+          })
+          .catch((err) => {
+            alert('An error occurred while logging in to Spotify. Please try again. ' + (err?.message || err))
           })
       }
     } else {
@@ -148,15 +153,25 @@ function App() {
   }
 
   const handleSpotifyLogin = async () => {
-    const { code_verifier, code_challenge } = await pkceChallenge()
-    localStorage.setItem('spotify_code_verifier', code_verifier)
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}` +
-      `&response_type=code` +
-      `&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}` +
-      `&scope=${encodeURIComponent(SPOTIFY_SCOPES)}` +
-      `&code_challenge_method=S256` +
-      `&code_challenge=${code_challenge}`
-    window.location.href = authUrl
+    try {
+      if (!window.crypto || !window.crypto.subtle || typeof window.crypto.subtle.digest !== 'function') {
+        alert('Your browser does not support the required cryptography features for Spotify login (PKCE S256). Please open this app in a modern browser such as Chrome, Firefox, Safari, or Edge. If you are using an in-app browser, please open the link in your device\'s default browser.')
+        return
+      }
+      const pkce = await pkceChallenge()
+      const code_verifier = pkce.code_verifier
+      const code_challenge = pkce.code_challenge
+      localStorage.setItem('spotify_code_verifier', code_verifier)
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}` +
+        `&response_type=code` +
+        `&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}` +
+        `&scope=${encodeURIComponent(SPOTIFY_SCOPES)}` +
+        `&code_challenge_method=S256` +
+        `&code_challenge=${code_challenge}`
+      window.location.href = authUrl
+    } catch (err: any) {
+      alert('Failed to start Spotify login: ' + (err && err.message ? err.message : String(err)))
+    }
   }
 
   const startQrScannerWithQrScanner = () => {
