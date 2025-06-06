@@ -2,19 +2,23 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { Html5Qrcode } from 'html5-qrcode'
 import pkceChallenge from 'pkce-challenge'
+import QrScanner from 'qr-scanner'
+import { SpotifyApi } from '@spotify/web-api-ts-sdk'
 
 // Use import.meta.env for Vite env variables
 const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
 const SPOTIFY_REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI
-const SPOTIFY_SCOPES = 'user-read-private user-read-email'
-
+const SPOTIFY_SCOPES = 'user-read-private user-read-email user-modify-playback-state user-read-playback-state streaming'
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [qrResult, setQrResult] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [qrScannerInstance, setQrScannerInstance] = useState<QrScanner | null>(null)
+  const [qrVideoRef, setQrVideoRef] = useState<HTMLVideoElement | null>(null)
+  const [barcodeError, setBarcodeError] = useState<string | null>(null)
+  const [spotifySdk, setSpotifySdk] = useState<SpotifyApi | null>(null)
 
   // Handle Spotify OAuth redirect
   useEffect(() => {
@@ -44,6 +48,13 @@ function App() {
               setIsLoggedIn(true)
               setShowSuccess(true)
               localStorage.setItem('spotify_access_token', data.access_token)
+              if (data.refresh_token) {
+                localStorage.setItem('spotify_refresh_token', data.refresh_token)
+              }
+              if (data.expires_in) {
+                const expiresAt = Date.now() + data.expires_in * 1000
+                localStorage.setItem('spotify_expires_at', expiresAt.toString())
+              }
               window.history.replaceState({}, document.title, '/')
             }
           })
@@ -57,6 +68,64 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    (async () => {
+      const token = await getValidSpotifyToken()
+      if (token) {
+        setSpotifySdk(SpotifyApi.withAccessToken(
+          SPOTIFY_CLIENT_ID,
+          {
+            access_token: token,
+            token_type: 'Bearer',
+            expires_in: 3600,
+            expires: 0, // dummy value, not used
+            refresh_token: '' // not used for implicit flow
+          }
+        ))
+        setIsLoggedIn(true)
+      }
+    })()
+  }, [isLoggedIn])
+
+  // Helper to refresh Spotify access token if expired
+  const getValidSpotifyToken = async () => {
+    const accessToken = localStorage.getItem('spotify_access_token')
+    const expiresAt = localStorage.getItem('spotify_expires_at')
+    const refreshToken = localStorage.getItem('spotify_refresh_token')
+    if (!accessToken || !expiresAt || !refreshToken) return null
+    if (Date.now() < parseInt(expiresAt)) {
+      return accessToken
+    }
+    // Token expired, refresh it
+    const params = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: SPOTIFY_CLIENT_ID,
+    })
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    })
+    const data = await response.json()
+    if (data.access_token) {
+      localStorage.setItem('spotify_access_token', data.access_token)
+      if (data.expires_in) {
+        const expiresAt = Date.now() + data.expires_in * 1000
+        localStorage.setItem('spotify_expires_at', expiresAt.toString())
+      }
+      return data.access_token
+    } else {
+      // Token refresh failed, force logout
+      setIsLoggedIn(false)
+      setSpotifySdk(null)
+      localStorage.removeItem('spotify_access_token')
+      localStorage.removeItem('spotify_refresh_token')
+      localStorage.removeItem('spotify_expires_at')
+      return null
+    }
+  }
+
   const handleSpotifyLogin = async () => {
     const { code_verifier, code_challenge } = await pkceChallenge()
     localStorage.setItem('spotify_code_verifier', code_verifier)
@@ -69,30 +138,124 @@ function App() {
     window.location.href = authUrl
   }
 
-  const startQrScan = async () => {
+  const startQrScannerWithQrScanner = () => {
     setScanning(true)
     setQrResult(null)
-    const qrRegionId = 'qr-region'
-    const html5QrCode = new Html5Qrcode(qrRegionId)
-    try {
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-          setQrResult(decodedText)
-          setScanning(false)
-          html5QrCode.stop()
-          html5QrCode.clear()
-          // Log QR code to console
-          console.log('Scanned QR code:', decodedText)
-        },
-        () => {
-          // Optionally handle scan errors
-        }
-      )
-    } catch (err) {
+    setBarcodeError(null)
+    if (qrScannerInstance) {
+      qrScannerInstance.destroy()
+      setQrScannerInstance(null)
+    }
+    let videoElem = document.getElementById('qr-video') as HTMLVideoElement | null
+    if (!videoElem) {
+      videoElem = document.createElement('video')
+      videoElem.id = 'qr-video'
+      videoElem.style.width = '300px'
+      videoElem.style.height = '300px'
+      videoElem.style.margin = '20px auto'
+      videoElem.style.display = 'block'
+      document.getElementById('qr-video-container')?.appendChild(videoElem)
+    }
+    setQrVideoRef(videoElem)
+    const scanner = new QrScanner(
+      videoElem,
+      (result) => {
+        setQrResult(result.data)
+        setScanning(false)
+        scanner.stop()
+        setQrScannerInstance(null)
+        // Log QR code to console
+        console.log('Scanned QR code:', result.data)
+      },
+      {
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
+      }
+    )
+    setQrScannerInstance(scanner)
+    scanner.start().catch((err) => {
+      setBarcodeError('Failed to start qr-scanner: ' + err)
       setScanning(false)
-      alert('Failed to start QR scanner')
+    })
+  }
+
+  const cancelQrScannerWithQrScanner = () => {
+    if (qrScannerInstance) {
+      qrScannerInstance.stop()
+      qrScannerInstance.destroy()
+      setQrScannerInstance(null)
+    }
+    setScanning(false)
+    if (qrVideoRef) {
+      qrVideoRef.remove()
+      setQrVideoRef(null)
+    }
+  }
+
+  const logOut = ()=>{
+      setIsLoggedIn(false)
+      setSpotifySdk(null)
+      localStorage.removeItem('spotify_access_token')
+      localStorage.removeItem('spotify_refresh_token')
+      localStorage.removeItem('spotify_expires_at')
+
+  }
+
+  const playRandomSong = async () => {
+    if (!spotifySdk) {
+      alert('You must be logged in to Spotify!')
+      logOut();
+      return
+    }
+    try {
+      // Get user's playlists
+      const playlists = await spotifySdk.currentUser.playlists.playlists()
+      if (!playlists.items.length) {
+        alert('No playlists found!')
+        return
+      }
+      // Pick a random playlist
+      const randomPlaylist = playlists.items[Math.floor(Math.random() * playlists.items.length)]
+      // Get tracks from the playlist
+      const tracks = await spotifySdk.playlists.getPlaylistItems(randomPlaylist.id)
+      if (!tracks.items.length) {
+        alert('No tracks found in the playlist!')
+        return
+      }
+      // Filter for valid tracks with a URI
+      const validTracks = tracks.items.map((item: any) => item.track).filter((track: any) => track && track.uri)
+      if (!validTracks.length) {
+        alert('No playable tracks found in the playlist!')
+        return
+      }
+      // Pick a random valid track
+      const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)]
+      // Get user's devices
+      const devicesResponse = await spotifySdk.player.getAvailableDevices()
+      const activeDevice = devicesResponse.devices.find((d: any) => d.is_active)
+      if (!activeDevice) {
+        alert('No active Spotify device found. Please open Spotify on one of your devices and start playing any song, then try again.')
+        return
+      }
+      // Use the SDK to play the playlist on the active device
+      await spotifySdk.player.startResumePlayback(activeDevice.id || '', randomPlaylist.uri)
+      // Handle both Track and Episode objects
+      let trackName = (randomTrack as any).name
+      let artistNames = ''
+      if ('artists' in randomTrack && Array.isArray((randomTrack as any).artists)) {
+        artistNames = (randomTrack as any).artists.map((a: any) => a.name).join(', ')
+      } else if ((randomTrack as any).show && typeof (randomTrack as any).show.name === 'string') {
+        artistNames = (randomTrack as any).show.name
+      }
+      alert(`Playing: ${trackName}${artistNames ? ' by ' + artistNames : ''}`)
+    } catch (err: any) {
+      console.error('Spotify playback error:', err)
+      if (err && err.message) {
+        alert('Failed to play a random song: ' + err.message + '\nMake sure you have Spotify Premium, an active device, and the correct permissions.')
+      } else {
+        alert('Failed to play a random song. Make sure you have Spotify Premium, an active device, and the correct permissions.')
+      }
+      logOut();
     }
   }
 
@@ -116,21 +279,20 @@ function App() {
               Successfully logged in to Spotify!
             </div>
           )}
-          <button onClick={startQrScan} disabled={scanning}>
+          <button onClick={startQrScannerWithQrScanner} disabled={scanning}>
             {scanning ? 'Scanning...' : 'Scan QR Code'}
           </button>
-          <div
-            id="qr-region"
-            style={{
-              width: 300,
-              height: 300,
-              margin: '20px auto',
-              border: '1px solid #ccc',
-              borderRadius: '8px',
-              display: scanning ? 'block' : 'none',
-            }}
-          />
+          {scanning && (
+            <button onClick={cancelQrScannerWithQrScanner} style={{ marginLeft: 8 }}>
+              Cancel Scan
+            </button>
+          )}
+          <div id="qr-video-container" />
+          {barcodeError && <div style={{ color: 'red' }}>{barcodeError}</div>}
           {qrResult && <p>Last scanned QR: {qrResult}</p>}
+          <button onClick={playRandomSong} disabled={!isLoggedIn} style={{ marginBottom: 16 }}>
+            Play Random Song from Spotify
+          </button>
         </>
       )}
     </div>
