@@ -127,14 +127,7 @@ function App() {
         }
         setIsPlaying(false);
       }, 10000)
-      // Handle both Track and Episode objects
-      let trackName = (randomTrack as any).name
-      let artistNames = ''
-      if ('artists' in randomTrack && Array.isArray((randomTrack as any).artists)) {
-        artistNames = (randomTrack as any).artists.map((a: any) => a.name).join(', ')
-      } else if ((randomTrack as any).show && typeof (randomTrack as any).show.name === 'string') {
-        artistNames = (randomTrack as any).show.name
-      }
+      
     } catch (err: any) {
       setIsPlaying(false);
       console.error('Spotify playback error:', err)
