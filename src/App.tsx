@@ -19,6 +19,8 @@ function App() {
   const [qrVideoRef, setQrVideoRef] = useState<HTMLVideoElement | null>(null)
   const [barcodeError, setBarcodeError] = useState<string | null>(null)
   const [spotifySdk, setSpotifySdk] = useState<SpotifyApi | null>(null)
+  const [devices, setDevices] = useState<any[]>([])
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
 
   // Handle Spotify OAuth redirect
   useEffect(() => {
@@ -86,6 +88,25 @@ function App() {
       }
     })()
   }, [isLoggedIn])
+
+  // Fetch available devices on login
+  useEffect(() => {
+    const fetchDevices = async () => {
+      if (spotifySdk) {
+        try {
+          const devicesResponse = await spotifySdk.player.getAvailableDevices()
+          setDevices(devicesResponse.devices)
+          const active = devicesResponse.devices.find((d: any) => d.is_active)
+          setSelectedDeviceId(active ? active.id : devicesResponse.devices[0]?.id || null)
+        } catch (e) {
+          setDevices([])
+        }
+      }
+    }
+    if (isLoggedIn && spotifySdk) {
+      fetchDevices()
+    }
+  }, [isLoggedIn, spotifySdk])
 
   // Helper to refresh Spotify access token if expired
   const getValidSpotifyToken = async () => {
@@ -201,6 +222,20 @@ function App() {
 
   }
 
+  // Set active device via API
+  const transferPlayback = async (deviceId: string) => {
+    if (!spotifySdk) return
+    try {
+      await spotifySdk.player.transferPlayback([deviceId], false)
+      setSelectedDeviceId(deviceId)
+      // Optionally, refetch devices to update active status
+      const devicesResponse = await spotifySdk.player.getAvailableDevices()
+      setDevices(devicesResponse.devices)
+    } catch (e) {
+      alert('Failed to transfer playback to selected device.')
+    }
+  }
+
   const playRandomSong = async () => {
     if (!spotifySdk) {
       alert('You must be logged in to Spotify!')
@@ -232,13 +267,33 @@ function App() {
       const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)]
       // Get user's devices
       const devicesResponse = await spotifySdk.player.getAvailableDevices()
-      const activeDevice = devicesResponse.devices.find((d: any) => d.is_active)
+      const activeDevice = devicesResponse.devices.find((d: any) => d.id === selectedDeviceId) || devicesResponse.devices.find((d: any) => d.is_active)
       if (!activeDevice) {
         alert('No active Spotify device found. Please open Spotify on one of your devices and start playing any song, then try again.')
         return
       }
-      // Use the SDK to play the playlist on the active device
-      await spotifySdk.player.startResumePlayback(activeDevice.id || '', randomPlaylist.uri)
+      // Use fetch to play the track at 30s on the selected/active device
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${activeDevice.id || ''}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('spotify_access_token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uris: [randomTrack.uri],
+            position_ms: 30000
+          })
+        }
+      )
+      // Pause playback after 10 seconds
+      setTimeout(async () => {
+        try {
+          await spotifySdk.player.pausePlayback(activeDevice.id || '')
+        } catch (e) {
+          console.error('Failed to pause playback:', e)
+        }
+      }, 10000)
       // Handle both Track and Episode objects
       let trackName = (randomTrack as any).name
       let artistNames = ''
@@ -293,6 +348,22 @@ function App() {
           <button onClick={playRandomSong} disabled={!isLoggedIn} style={{ marginBottom: 16 }}>
             Play Random Song from Spotify
           </button>
+          {isLoggedIn && devices.length > 0 && (
+            <div style={{ margin: '16px 0' }}>
+              <label htmlFor="device-select">Select Spotify Device: </label>
+              <select
+                id="device-select"
+                value={selectedDeviceId || ''}
+                onChange={e => transferPlayback(e.target.value)}
+              >
+                {devices.map(device => (
+                  <option key={device.id} value={device.id}>
+                    {device.name} {device.is_active ? '(Active)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </>
       )}
     </div>
