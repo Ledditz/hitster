@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import { SpotifyApi } from '@spotify/web-api-ts-sdk'
 import { handleSpotifyRedirect, getValidSpotifyToken, handleSpotifyLogin, logOut, SPOTIFY_CLIENT_ID } from './spotifyAuth';
@@ -14,6 +12,7 @@ function App() {
   const [spotifySdk, setSpotifySdk] = useState<SpotifyApi | null>(null)
   const [devices, setDevices] = useState<any[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
 
   // Use QR scanner hook
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner();
@@ -71,6 +70,7 @@ function App() {
       return
     }
     try {
+      setIsPlaying(true);
       // Get user's playlists
       const playlists = await spotifySdk.currentUser.playlists.playlists()
       if (!playlists.items.length) {
@@ -121,6 +121,7 @@ function App() {
         } catch (e) {
           console.error('Failed to pause playback:', e)
         }
+        setIsPlaying(false);
       }, 10000)
       // Handle both Track and Episode objects
       let trackName = (randomTrack as any).name
@@ -132,6 +133,7 @@ function App() {
       }
       alert(`Playing: ${trackName}${artistNames ? ' by ' + artistNames : ''}`)
     } catch (err: any) {
+      setIsPlaying(false);
       console.error('Spotify playback error:', err)
       if (err && err.message) {
         alert('Failed to play a random song: ' + err.message + '\nMake sure you have Spotify Premium, an active device, and the correct permissions.')
@@ -143,46 +145,68 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-black text-white font-sans">
+      <div className="flex flex-col items-center mb-8">
+        <div className="mb-4 flex flex-col items-center">
+          {/* Animated Logo: Music note SVG with bounce only when playing */}
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className={`mb-2 drop-shadow-lg${isPlaying ? ' bounce-spotify-logo' : ''}`}>
+            <circle cx="28" cy="28" r="28" fill="#1DB954"/>
+            <path d="M38 16v18.5a6.5 6.5 0 1 1-2-4.6V22h-10v10.5a6.5 6.5 0 1 1-2-4.6V16h14z" fill="#fff"/>
+          </svg>
+          {/* Modern animated sound wave (SVG) */}
+          <svg width="80" height="32" viewBox="0 0 80 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="block">
+            <rect x="5" y={isPlaying ? '8' : '8'} width="6" height={isPlaying ? undefined : '16'} rx="3" fill="#34d399">
+              {isPlaying && <animate attributeName="height" values="8;24;8" dur="1s" repeatCount="indefinite"/>}
+              {isPlaying && <animate attributeName="y" values="12;0;12" dur="1s" repeatCount="indefinite"/>}
+            </rect>
+            <rect x="19" y={isPlaying ? '4' : '4'} width="6" height={isPlaying ? undefined : '24'} rx="3" fill="#10b981">
+              {isPlaying && <animate attributeName="height" values="24;8;24" dur="1.2s" repeatCount="indefinite"/>}
+              {isPlaying && <animate attributeName="y" values="0;12;0" dur="1.2s" repeatCount="indefinite"/>}
+            </rect>
+            <rect x="33" y={isPlaying ? '10' : '14'} width="6" height={isPlaying ? undefined : '8'} rx="3" fill="#6ee7b7">
+              {isPlaying && <animate attributeName="height" values="12;28;12" dur="0.9s" repeatCount="indefinite"/>}
+              {isPlaying && <animate attributeName="y" values="10;0;10" dur="0.9s" repeatCount="indefinite"/>}
+            </rect>
+            <rect x="47" y={isPlaying ? '6' : '4'} width="6" height={isPlaying ? undefined : '24'} rx="3" fill="#059669">
+              {isPlaying && <animate attributeName="height" values="20;8;20" dur="1.1s" repeatCount="indefinite"/>}
+              {isPlaying && <animate attributeName="y" values="6;16;6" dur="1.1s" repeatCount="indefinite"/>}
+            </rect>
+            <rect x="61" y={isPlaying ? '12' : '8'} width="6" height={isPlaying ? undefined : '16'} rx="3" fill="#34d399">
+              {isPlaying && <animate attributeName="height" values="8;24;8" dur="1.3s" repeatCount="indefinite"/>}
+              {isPlaying && <animate attributeName="y" values="12;0;12" dur="1.3s" repeatCount="indefinite"/>}
+            </rect>
+          </svg>
+        </div>
+        <h1 className="text-4xl font-extrabold tracking-tight mb-2 drop-shadow-lg">Spotify QR Scanner</h1>
+        <p className="text-lg text-gray-300 mb-2">Connect to your music, instantly.</p>
       </div>
-      <h1>Spotify QR Scanner</h1>
       {!isLoggedIn ? (
-        <button onClick={handleSpotifyLogin}>Login with Spotify</button>
+        <button onClick={handleSpotifyLogin} className="px-6 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Login with Spotify</button>
       ) : (
         <>
           {showSuccess && (
-            <div style={{ color: 'green', marginBottom: 16 }}>
-              Successfully logged in to Spotify!
-            </div>
+            <div className="text-green-400 mb-4 font-medium">Successfully logged in to Spotify!</div>
           )}
-          <button onClick={startQrScanner} disabled={scanning}>
+          <button onClick={startQrScanner} disabled={scanning} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold shadow transition mb-2">
             {scanning ? 'Scanning...' : 'Scan QR Code'}
           </button>
           {scanning && (
-            <button onClick={cancelQrScanner} style={{ marginLeft: 8 }}>
-              Cancel Scan
-            </button>
+            <button onClick={cancelQrScanner} className="ml-2 px-4 py-2 rounded bg-red-500 hover:bg-red-600 text-white font-semibold shadow transition mb-2">Cancel Scan</button>
           )}
-          <div id="qr-video-container" />
-          {barcodeError && <div style={{ color: 'red' }}>{barcodeError}</div>}
-          {qrResult && <p>Last scanned QR: {qrResult}</p>}
-          <button onClick={handlePlayRandomSong} disabled={!isLoggedIn} style={{ marginBottom: 16 }}>
+          <div id="qr-video-container" className="my-4" />
+          {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
+          {qrResult && <p className="mb-2">Last scanned QR: <span className="font-mono bg-gray-800 px-2 py-1 rounded">{qrResult}</span></p>}
+          <button onClick={handlePlayRandomSong} disabled={!isLoggedIn} className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white font-semibold shadow transition mb-4">
             Play Random Song from Spotify
           </button>
           {isLoggedIn && devices.length > 0 && (
-            <div style={{ margin: '16px 0' }}>
-              <label htmlFor="device-select">Select Spotify Device: </label>
+            <div className="my-4 flex flex-col items-center">
+              <label htmlFor="device-select" className="mb-1">Select Spotify Device:</label>
               <select
                 id="device-select"
                 value={selectedDeviceId || ''}
                 onChange={e => handleTransferPlayback(e.target.value)}
+                className="px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400"
               >
                 {devices.map(device => (
                   <option key={device.id} value={device.id}>

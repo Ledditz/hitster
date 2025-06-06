@@ -40,3 +40,26 @@
 .read-the-docs {
   color: #888;
 }
+
+@keyframes bounce-spotify {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-12px) scale(1.08);
+  }
+  40% {
+    transform: translateY(-8px) scale(1.04);
+  }
+  60% {
+    transform: translateY(-4px) scale(1.02);
+  }
+  80% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.bounce-spotify-logo {
+  animation: bounce-spotify 1.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+  will-change: transform;
+}
