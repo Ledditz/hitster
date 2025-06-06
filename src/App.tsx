@@ -13,6 +13,8 @@ function App() {
   const [devices, setDevices] = useState<any[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [lastPlayedTrack, setLastPlayedTrack] = useState<any | null>(null)
+  const [replayEnabled, setReplayEnabled] = useState(false)
 
   // Use QR scanner hook
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner();
@@ -93,6 +95,8 @@ function App() {
       }
       // Pick a random valid track
       const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)]
+      setLastPlayedTrack(randomTrack)
+      setReplayEnabled(true)
       // Get user's devices
       const devicesResponse = await spotifySdk.player.getAvailableDevices()
       const activeDevice = devicesResponse.devices.find((d: any) => d.id === selectedDeviceId) || devicesResponse.devices.find((d: any) => d.is_active)
@@ -131,7 +135,6 @@ function App() {
       } else if ((randomTrack as any).show && typeof (randomTrack as any).show.name === 'string') {
         artistNames = (randomTrack as any).show.name
       }
-      alert(`Playing: ${trackName}${artistNames ? ' by ' + artistNames : ''}`)
     } catch (err: any) {
       setIsPlaying(false);
       console.error('Spotify playback error:', err)
@@ -139,6 +142,51 @@ function App() {
         alert('Failed to play a random song: ' + err.message + '\nMake sure you have Spotify Premium, an active device, and the correct permissions.')
       } else {
         alert('Failed to play a random song. Make sure you have Spotify Premium, an active device, and the correct permissions.')
+      }
+      logOut(setIsLoggedIn, setSpotifySdk);
+    }
+  }
+
+  // Replay last played song
+  const handleReplaySong = async () => {
+    if (!spotifySdk || !lastPlayedTrack) return;
+    try {
+      setIsPlaying(true);
+      const devicesResponse = await spotifySdk.player.getAvailableDevices()
+      const activeDevice = devicesResponse.devices.find((d: any) => d.id === selectedDeviceId) || devicesResponse.devices.find((d: any) => d.is_active)
+      if (!activeDevice) {
+        alert('No active Spotify device found. Please open Spotify on one of your devices and start playing any song, then try again.')
+        setIsPlaying(false);
+        return
+      }
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${activeDevice.id || ''}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('spotify_access_token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uris: [lastPlayedTrack.uri],
+            position_ms: 30000
+          })
+        }
+      )
+      setTimeout(async () => {
+        try {
+          await spotifySdk.player.pausePlayback(activeDevice.id || '')
+        } catch (e) {
+          console.error('Failed to pause playback:', e)
+        }
+        setIsPlaying(false);
+      }, 10000)
+    } catch (err: any) {
+      setIsPlaying(false);
+      console.error('Spotify playback error:', err)
+      if (err && err.message) {
+        alert('Failed to replay the song: ' + err.message + '\nMake sure you have Spotify Premium, an active device, and the correct permissions.')
+      } else {
+        alert('Failed to replay the song. Make sure you have Spotify Premium, an active device, and the correct permissions.')
       }
       logOut(setIsLoggedIn, setSpotifySdk);
     }
@@ -196,9 +244,34 @@ function App() {
           <div id="qr-video-container" className="my-4" />
           {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
           {qrResult && <p className="mb-2">Last scanned QR: <span className="font-mono bg-gray-800 px-2 py-1 rounded">{qrResult}</span></p>}
-          <button onClick={handlePlayRandomSong} disabled={!isLoggedIn} className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white font-semibold shadow transition mb-4">
-            Play Random Song from Spotify
-          </button>
+          {/* Play Random Song Icon Button */}
+          <div className="flex gap-4 mb-4">
+            <button
+              onClick={handlePlayRandomSong}
+              disabled={!isLoggedIn}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white shadow transition focus:outline-none focus:ring-2 focus:ring-green-400"
+              aria-label="Play Random Song from Spotify"
+            >
+              {/* Play Icon SVG */}
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="14" cy="14" r="14" fill="#22c55e"/>
+                <polygon points="11,8 22,14 11,20" fill="#fff"/>
+              </svg>
+            </button>
+            <button
+              onClick={handleReplaySong}
+              disabled={!replayEnabled}
+              className="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-500 text-white shadow transition focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              aria-label="Replay Previous Song"
+            >
+              {/* Replay Icon SVG */}
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="14" cy="14" r="14" fill="#facc15"/>
+                <path d="M10 14a4 4 0 1 1 4 4" stroke="#fff" strokeWidth="2" fill="none"/>
+                <polygon points="8,14 12,12 12,16" fill="#fff"/>
+              </svg>
+            </button>
+          </div>
           {isLoggedIn && devices.length > 0 && (
             <div className="my-4 flex flex-col items-center">
               <label htmlFor="device-select" className="mb-1">Select Spotify Device:</label>
