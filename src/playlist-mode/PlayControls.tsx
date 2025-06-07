@@ -1,6 +1,6 @@
 import React from 'react';
-import { useSpotifyContext } from './SongContext';
-import { PlayButtons } from './PlayButtons';
+import { useSpotifyContext } from '../contexts/SongContext';
+import { PlayButtons } from '../components/PlayButtons';
 
 export const PlayControls: React.FC = () => {
   const {

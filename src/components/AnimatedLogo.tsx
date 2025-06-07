@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSpotifyContext } from './SongContext';
+import { useSpotifyContext } from './contexts/SongContext';
 
 interface AnimatedLogoProps {
   // isPlaying: boolean;

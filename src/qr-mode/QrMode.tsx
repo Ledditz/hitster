@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useQrScanner } from './qrScanner';
-import { DeviceSelect } from './DeviceSelect';
+import { DeviceSelect } from '../components/DeviceSelect';
 import { playHitsterSongFromQr } from './hitsterUtils';
-import { useDevice } from './DeviceContext';
-import { useSpotifyContext } from './SongContext';
+import { useDevice } from '../contexts/DeviceContext';
+import { useSpotifyContext } from '../contexts/SongContext';
 import { MdQrCode, MdClose } from 'react-icons/md';
-import { PlayButtons } from './PlayButtons';
-import { checkSpotifyAuth } from './spotifyUtils';
+import { PlayButtons } from '../components/PlayButtons';
+import { checkSpotifyAuth } from '../utils/spotifyUtils';
 
 interface QrModeProps {
   setMode: (mode: 'qr' | 'playlist' | null) => void;

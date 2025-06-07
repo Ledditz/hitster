@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { SpotifyApi } from '@spotify/web-api-ts-sdk'
-import { handleSpotifyRedirect, getValidSpotifyToken, handleSpotifyLogin, logOut, SPOTIFY_CLIENT_ID } from './spotifyAuth';
-import { AnimatedLogo } from './AnimatedLogo';
-import { QrMode } from './QrMode';
-import { DeviceProvider } from './DeviceContext';
-import { PlaylistMode } from './PlaylistMode';
-import { SpotifyProvider, useSpotifyContext } from './SongContext';
+import { handleSpotifyRedirect, getValidSpotifyToken, handleSpotifyLogin, logOut, SPOTIFY_CLIENT_ID } from './utils/spotifyAuth';
+import { AnimatedLogo } from './components/AnimatedLogo';
+import { QrMode } from './qr-mode/QrMode';
+import { DeviceProvider } from './contexts/DeviceContext';
+import { PlaylistMode } from './playlist-mode/PlaylistMode';
+import { SpotifyProvider, useSpotifyContext } from './contexts/SongContext';
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
