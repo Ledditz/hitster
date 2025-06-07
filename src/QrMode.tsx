@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQrScanner } from './qrScanner';
+import { DeviceSelect } from './DeviceSelect';
+import { playHitsterSongFromQr } from './hitsterUtils';
+import { useDevice } from './DeviceContext';
+import { useSpotifySdk } from './App';
 
 interface QrModeProps {
   setMode: (mode: 'qr' | 'playlist' | null) => void;
@@ -7,6 +11,21 @@ interface QrModeProps {
 
 export const QrMode: React.FC<QrModeProps> = ({ setMode }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner();
+  const { selectedDeviceId } = useDevice();
+  const spotifySdk = useSpotifySdk();
+  const [playing, setPlaying] = useState(false);
+  const [playError, setPlayError] = useState<string | null>(null);
+
+  useEffect(() => {
+    playHitsterSongFromQr({
+      qrResult,
+      spotifySdk,
+      selectedDeviceId,
+      setPlaying,
+      setPlayError,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrResult]);
 
   return (
     <div className="flex flex-col items-center">
@@ -26,12 +45,15 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode }) => {
         </button>
       )}
       <div id="qr-video-container" className="my-4" />
+      <DeviceSelect />
       {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
       {qrResult && (
         <p className="mb-2">
           Last scanned QR: <span className="font-mono bg-gray-800 px-2 py-1 rounded">{qrResult}</span>
         </p>
       )}
+      {playing && <div className="text-green-400 mb-2">Playing song...</div>}
+      {playError && <div className="text-red-400 mb-2">{playError}</div>}
       <button
         onClick={() => setMode(null)}
         className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"

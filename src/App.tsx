@@ -1,17 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, createContext, useContext } from 'react'
 import './App.css'
 import { SpotifyApi } from '@spotify/web-api-ts-sdk'
 import { handleSpotifyRedirect, getValidSpotifyToken, handleSpotifyLogin, logOut, SPOTIFY_CLIENT_ID } from './spotifyAuth';
 import { PlayControls } from './PlayControls';
 import { AnimatedLogo } from './AnimatedLogo';
 import { QrMode } from './QrMode';
+import { DeviceProvider } from './DeviceContext';
+
+// Add SpotifySdkContext
+export const SpotifySdkContext = createContext<SpotifyApi | null>(null);
+export const useSpotifySdk = () => useContext(SpotifySdkContext);
 
 // Use import.meta.env for Vite env variables
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [spotifySdk, setSpotifySdk] = useState<SpotifyApi | null>(null)
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [lastPlayedTrack, setLastPlayedTrack] = useState<any | null>(null)
   const [replayEnabled, setReplayEnabled] = useState(false)
@@ -90,76 +94,78 @@ function App() {
   // };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pt-20 px-4 flex flex-col items-center">
-      <div className="max-w-2xl mx-auto flex flex-col items-center">
-        <AnimatedLogo isPlaying={isPlaying} />
-      </div>
-      <h1 className="text-4xl font-extrabold tracking-tight mb-2 drop-shadow-lg">Spotify QR Scanner</h1>
-      <p className="text-lg text-gray-300 mb-2">Connect to your music, instantly.</p>
-      {!isLoggedIn ? (
-        <button onClick={handleSpotifyLogin} className="px-6 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Login with Spotify</button>
-      ) : (
-        <>
-          {/* Add CSV process button for testing */}
-          {/* <button onClick={handleProcessCsv} className="mb-4 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow transition">Process CSV & Log</button> */}
-          {showSuccess && (
-            <div className="text-green-400 mb-4 font-medium">Successfully logged in to Spotify!</div>
-          )}
-          {mode === null && (
-            <div className="flex flex-col gap-4 mb-4">
-              <button onClick={() => setMode('qr')} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow transition">QR Code Mode</button>
-              <button onClick={() => setMode('playlist')} className="px-4 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Spotify Playlist Mode</button>
-            </div>
-          )}
-          {mode === 'qr' && (
-            <QrMode
-              setMode={setMode}
-            />
-          )}
-          {mode === 'playlist' && (
-            <div className="flex flex-col items-center">
-              {!selectedPlaylist ? (
-                <>
-                  <div className="mb-2">Select a playlist:</div>
-                  <select className="mb-4 px-3 py-2 rounded text-black" onChange={e => {
-                    const idx = Number(e.target.value);
-                    console.log("set playlist to",playlists[idx])
-                    setSelectedPlaylist(playlists[idx]);
-                  }} defaultValue="">
-                    <option value="" disabled>Select...</option>
-                    {playlists.map((pl, idx) => (
-                      <option key={pl.id} value={idx}>{pl.name}</option>
-                    ))}
-                  </select>
-                  <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
-                </>
-              ) : (
-                <>
-                  <div className="mb-2">Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span></div>
-                  <PlayControls
-                    isLoggedIn={isLoggedIn}
-                    replayEnabled={replayEnabled}
-                    spotifySdk={spotifySdk}
-                    selectedDeviceId={selectedDeviceId}
-                    setSelectedDeviceId={setSelectedDeviceId}
-                    setIsPlaying={setIsPlaying}
-                    setLastPlayedTrack={setLastPlayedTrack}
-                    setReplayEnabled={setReplayEnabled}
-                    lastPlayedTrack={lastPlayedTrack}
-                    logOut={logOut}
-                    setIsLoggedIn={setIsLoggedIn}
-                    setSpotifySdk={setSpotifySdk}
-                    playlist={selectedPlaylist}
-                  />
-                  <button onClick={() => setSelectedPlaylist(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Change Playlist</button>
-                  <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
-                </>
+    <SpotifySdkContext.Provider value={spotifySdk}>
+      <DeviceProvider spotifySdk={spotifySdk}>
+        <div className="min-h-screen bg-gray-900 text-white pt-20 px-4 flex flex-col items-center">
+          <div className="max-w-2xl mx-auto flex flex-col items-center">
+            <AnimatedLogo isPlaying={isPlaying} />
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight mb-2 drop-shadow-lg">Spotify QR Scanner</h1>
+          <p className="text-lg text-gray-300 mb-2">Connect to your music, instantly.</p>
+          {!isLoggedIn ? (
+            <button onClick={handleSpotifyLogin} className="px-6 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Login with Spotify</button>
+          ) : (
+            <>
+              {/* Add CSV process button for testing */}
+              {/* <button onClick={handleProcessCsv} className="mb-4 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow transition">Process CSV & Log</button> */}
+              {showSuccess && (
+                <div className="text-green-400 mb-4 font-medium">Successfully logged in to Spotify!</div>
               )}
-            </div>
+              {mode === null && (
+                <div className="flex flex-col gap-4 mb-4">
+                  <button onClick={() => setMode('qr')} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow transition">QR Code Mode</button>
+                  <button onClick={() => setMode('playlist')} className="px-4 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Spotify Playlist Mode</button>
+                </div>
+              )}
+              {mode === 'qr' && (
+                <QrMode
+                  setMode={setMode}
+                />
+              )}
+              {mode === 'playlist' && (
+                <div className="flex flex-col items-center">
+                  {!selectedPlaylist ? (
+                    <>
+                      <div className="mb-2">Select a playlist:</div>
+                      <select className="mb-4 px-3 py-2 rounded text-black" onChange={e => {
+                        const idx = Number(e.target.value);
+                        console.log("set playlist to",playlists[idx])
+                        setSelectedPlaylist(playlists[idx]);
+                      }} defaultValue="">
+                        <option value="" disabled>Select...</option>
+                        {playlists.map((pl, idx) => (
+                          <option key={pl.id} value={idx}>{pl.name}</option>
+                        ))}
+                      </select>
+                      <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mb-2">Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span></div>
+                      <PlayControls
+                        isLoggedIn={isLoggedIn}
+                        replayEnabled={replayEnabled}
+                        spotifySdk={spotifySdk}
+                        setIsPlaying={setIsPlaying}
+                        setLastPlayedTrack={setLastPlayedTrack}
+                        setReplayEnabled={setReplayEnabled}
+                        lastPlayedTrack={lastPlayedTrack}
+                        logOut={logOut}
+                        setIsLoggedIn={setIsLoggedIn}
+                        setSpotifySdk={setSpotifySdk}
+                        playlist={selectedPlaylist}
+                      />
+                      <button onClick={() => setSelectedPlaylist(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Change Playlist</button>
+                      <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
+                    </>
+                  )}
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
-    </div>
+        </div>
+      </DeviceProvider>
+    </SpotifySdkContext.Provider>
   )
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
 import { DeviceSelect } from './DeviceSelect';
 
@@ -6,8 +6,6 @@ interface PlayControlsProps {
   isLoggedIn: boolean;
   replayEnabled: boolean;
   spotifySdk: SpotifyApi | null;
-  selectedDeviceId: string | null;
-  setSelectedDeviceId: React.Dispatch<React.SetStateAction<string | null>>;
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
   setLastPlayedTrack: React.Dispatch<any>;
   setReplayEnabled: React.Dispatch<React.SetStateAction<boolean>>;
@@ -22,8 +20,6 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
   isLoggedIn,
   replayEnabled,
   spotifySdk,
-  selectedDeviceId,
-  setSelectedDeviceId,
   setIsPlaying,
   setLastPlayedTrack,
   setReplayEnabled,
@@ -33,20 +29,6 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
   setSpotifySdk,
   playlist,
 }) => {
-
-  const [devices, setDevices] = useState<any[]>([])
-  // Set active device via API
-  const handleTransferPlayback = async (deviceId: string) => {
-    if (!spotifySdk) return;
-    try {
-      await spotifySdk.player.transferPlayback([deviceId], false);
-      setSelectedDeviceId(deviceId);
-      const devicesResponse = await spotifySdk.player.getAvailableDevices();
-      setDevices(devicesResponse.devices);
-    } catch (e) {
-      alert('Failed to transfer playback to selected device.');
-    }
-  };
 
   // Play random song
   const handlePlayRandomSong = async () => {
@@ -84,7 +66,7 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
       setLastPlayedTrack(randomTrack)
       setReplayEnabled(true)
       const devicesResponse = await spotifySdk.player.getAvailableDevices()
-      const activeDevice = devicesResponse.devices.find((d: any) => d.id === selectedDeviceId) || devicesResponse.devices.find((d: any) => d.is_active)
+      const activeDevice = devicesResponse.devices.find((d: any) => d.is_active)
       if (!activeDevice) {
         alert('No active Spotify device found. Please open Spotify on one of your devices and start playing any song, then try again.')
         return
@@ -128,7 +110,7 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
     try {
       setIsPlaying(true);
       const devicesResponse = await spotifySdk.player.getAvailableDevices()
-      const activeDevice = devicesResponse.devices.find((d: any) => d.id === selectedDeviceId) || devicesResponse.devices.find((d: any) => d.is_active)
+      const activeDevice = devicesResponse.devices.find((d: any) => d.is_active)
       if (!activeDevice) {
         alert('No active Spotify device found. Please open Spotify on one of your devices and start playing any song, then try again.')
         setIsPlaying(false);
@@ -167,20 +149,6 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
     }
   }
 
-  // Fetch devices on mount and when spotifySdk changes
-  React.useEffect(() => {
-    const fetchDevices = async () => {
-      if (!spotifySdk) return;
-      try {
-        const devicesResponse = await spotifySdk.player.getAvailableDevices();
-        setDevices(devicesResponse.devices);
-      } catch (e) {
-        setDevices([]);
-      }
-    };
-    fetchDevices();
-  }, [spotifySdk]);
-
   return (
     <>
       <div className="flex gap-4 mb-4">
@@ -210,12 +178,8 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
           </svg>
         </button>
       </div>
-      {isLoggedIn && devices.length > 0 && (
-        <DeviceSelect
-          devices={devices}
-          selectedDeviceId={selectedDeviceId}
-          onSelect={handleTransferPlayback}
-        />
+      {isLoggedIn && (
+        <DeviceSelect />
       )}
     </>
   );
