@@ -1,124 +1,63 @@
 import React from "react"
 import { useSpotifyContext } from "../contexts/SongContext"
 import { PlayButtons } from "../components/PlayButtons"
-import type { PlaylistedTrack, TrackItem } from "@spotify/web-api-ts-sdk"
 
 export const PlayControls: React.FC = () => {
-  const { spotifySdk, setPlaying, setSongAndPlaying, selectedPlaylist, currentDeviceId } =
-    useSpotifyContext()
+  const { playRandomSong, playTrack, setPlaying, song, pauseCurrentPlay } = useSpotifyContext()
   const [replayEnabled, setReplayEnabled] = React.useState(false)
-  const [lastPlayedTrack, setLastPlayedTrack] = React.useState<TrackItem | null>(null)
-
-  // Store timeout id for canceling
   const playTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Pause playback on the active device
   const handlePause = async () => {
-    if (!spotifySdk) return
-    try {
-      if (!currentDeviceId) return
-      await spotifySdk.player.pausePlayback(currentDeviceId)
-      if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current)
-        playTimeoutRef.current = null
-      }
-      setPlaying(false)
-    } catch (e) {
-      setPlaying(false)
+    if (playTimeoutRef.current) {
+      clearTimeout(playTimeoutRef.current)
+      playTimeoutRef.current = null
+    }
+    if (pauseCurrentPlay) {
+      await pauseCurrentPlay()
     }
   }
 
   // Play random song from selected playlist
   const handlePlayRandomSong = async () => {
-    if (!spotifySdk || !selectedPlaylist) return
-    setPlaying(true)
-    try {
-      const tracks = await spotifySdk.playlists.getPlaylistItems(selectedPlaylist.id)
-      const validTracks = tracks.items
-        .map((item: PlaylistedTrack) => item.track)
-        .filter((track: TrackItem) => track?.uri && track.type === "track")
-      if (!validTracks.length) return
-      const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)]
-      setLastPlayedTrack(randomTrack)
-      setReplayEnabled(true)
-      setSongAndPlaying(
-        {
-          id: randomTrack.id,
-          spotifyLink: `https://open.spotify.com/track/${randomTrack.id}`,
-          artist:
-            (randomTrack.type === "track" &&
-              "artists" in randomTrack &&
-              randomTrack.artists?.[0]?.name) ||
-            "",
-          title: randomTrack.name,
-          year: "",
-        },
-        true,
-      )
-      if (!currentDeviceId) return
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${currentDeviceId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("spotify_access_token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          uris: [randomTrack.uri],
-          position_ms: 30000,
-        }),
-      })
-      if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current)
-      }
-      playTimeoutRef.current = setTimeout(async () => {
-        try {
-          if (currentDeviceId) {
-            await spotifySdk.player.pausePlayback(currentDeviceId)
-          }
-        } catch (e) {}
-        setPlaying(false)
-        playTimeoutRef.current = null
-      }, 10000)
-    } catch (e) {
-      setPlaying(false)
+    setReplayEnabled(false)
+    await playRandomSong()
+    setReplayEnabled(true)
+    if (playTimeoutRef.current) {
+      clearTimeout(playTimeoutRef.current)
     }
+    playTimeoutRef.current = setTimeout(async () => {
+      playTimeoutRef.current = null
+      if (pauseCurrentPlay) {
+        await pauseCurrentPlay()
+      }
+    }, 10000)
   }
 
   // Replay last played song
   const handleReplaySong = async () => {
-    if (!spotifySdk || !lastPlayedTrack) return
+    if (!song) return
     setPlaying(true)
-    try {
-      const devicesResponse = await spotifySdk.player.getAvailableDevices()
-      const activeDevice = devicesResponse.devices.find((d) => d.is_active)
-      if (!activeDevice) return
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${activeDevice.id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("spotify_access_token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          uris: [lastPlayedTrack.uri],
-          position_ms: 30000,
-        }),
-      })
+    await playTrack(song.spotifyLink.replace("https://open.spotify.com/track/", "spotify:track:"))
+    if (playTimeoutRef.current) {
+      clearTimeout(playTimeoutRef.current)
+    }
+    playTimeoutRef.current = setTimeout(async () => {
+      playTimeoutRef.current = null
+      if (pauseCurrentPlay) {
+        await pauseCurrentPlay()
+      }
+    }, 10000)
+  }
+
+  React.useEffect(() => {
+    return () => {
       if (playTimeoutRef.current) {
         clearTimeout(playTimeoutRef.current)
-      }
-      playTimeoutRef.current = setTimeout(async () => {
-        try {
-          if (activeDevice?.id) {
-            await spotifySdk.player.pausePlayback(activeDevice.id)
-          }
-        } catch (e) {}
-        setPlaying(false)
         playTimeoutRef.current = null
-      }, 10000)
-    } catch (e) {
-      setPlaying(false)
+      }
     }
-  }
+  }, [])
 
   return (
     <>

@@ -14,7 +14,8 @@ interface QrModeProps {
 
 export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner()
-  const { spotifySdk, setPlaying, setSongAndPlaying, song, currentDeviceId } = useSpotifyContext()
+  const { spotifySdk, setPlaying, setSongAndPlaying, song, currentDeviceId, pauseCurrentPlay } =
+    useSpotifyContext()
   const [playError, setPlayError] = useState<string | null>(null)
   // Add replayEnabled state for replay button
   const [replayEnabled, setReplayEnabled] = useState(false)
@@ -88,18 +89,17 @@ export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
       })
       setPlaying(true)
       playTimeoutRef.current = setTimeout(async () => {
-        try {
-          if (currentDeviceId) {
-            await spotifySdk.player.pausePlayback(currentDeviceId)
-          }
-        } catch (e) {}
-        setPlaying(false)
         playTimeoutRef.current = null
+        if (pauseCurrentPlay) {
+          await pauseCurrentPlay()
+        }
       }, 10000)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       setPlayError(`Failed to replay song: ${errorMessage}`)
-      setPlaying(false)
+      if (pauseCurrentPlay) {
+        await pauseCurrentPlay()
+      }
     }
   }
 
