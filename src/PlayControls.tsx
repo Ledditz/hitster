@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { DeviceSelect } from './DeviceSelect';
 
 interface PlayControlsProps {
   isLoggedIn: boolean;
@@ -14,6 +15,7 @@ interface PlayControlsProps {
   logOut: (setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>, setSpotifySdk: React.Dispatch<React.SetStateAction<SpotifyApi | null>>) => void;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
   setSpotifySdk: React.Dispatch<React.SetStateAction<SpotifyApi | null>>;
+  playlist?: any; // Add playlist prop
 }
 
 export const PlayControls: React.FC<PlayControlsProps> = ({
@@ -28,7 +30,8 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
   lastPlayedTrack,
   logOut,
   setIsLoggedIn,
-  setSpotifySdk
+  setSpotifySdk,
+  playlist,
 }) => {
 
   const [devices, setDevices] = useState<any[]>([])
@@ -54,13 +57,18 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
     }
     try {
       setIsPlaying(true);
-      const playlists = await spotifySdk.currentUser.playlists.playlists()
-      if (!playlists.items.length) {
-        alert('No playlists found!')
-        return
+      let playlistToUse = playlist;
+      if (!playlistToUse) {
+        // fallback: get a random playlist if none provided
+        const playlists = await spotifySdk.currentUser.playlists.playlists();
+        if (!playlists.items.length) {
+          alert('No playlists found!')
+          return
+        }
+        playlistToUse = playlists.items[Math.floor(Math.random() * playlists.items.length)];
       }
-      const randomPlaylist = playlists.items[Math.floor(Math.random() * playlists.items.length)]
-      const tracks = await spotifySdk.playlists.getPlaylistItems(randomPlaylist.id)
+      console.log('Using playlist:', playlistToUse.name);
+      const tracks = await spotifySdk.playlists.getPlaylistItems(playlistToUse.id)
       if (!tracks.items.length) {
         alert('No tracks found in the playlist!')
         return
@@ -70,7 +78,9 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
         alert('No playable tracks found in the playlist!')
         return
       }
+      console.log("all tracks",validTracks)
       const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)]
+      console.log("selected track", randomTrack)
       setLastPlayedTrack(randomTrack)
       setReplayEnabled(true)
       const devicesResponse = await spotifySdk.player.getAvailableDevices()
@@ -201,21 +211,11 @@ export const PlayControls: React.FC<PlayControlsProps> = ({
         </button>
       </div>
       {isLoggedIn && devices.length > 0 && (
-        <div className="my-4 flex flex-col items-center">
-          <label htmlFor="device-select" className="mb-1">Select Spotify Device:</label>
-          <select
-            id="device-select"
-            value={selectedDeviceId || ''}
-            onChange={e => handleTransferPlayback(e.target.value)}
-            className="px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400"
-          >
-            {devices.map(device => (
-              <option key={device.id} value={device.id}>
-                {device.name} {device.is_active ? '(Active)' : ''}
-              </option>
-            ))}
-          </select>
-        </div>
+        <DeviceSelect
+          devices={devices}
+          selectedDeviceId={selectedDeviceId}
+          onSelect={handleTransferPlayback}
+        />
       )}
     </>
   );
