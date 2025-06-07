@@ -1,11 +1,14 @@
 import React from 'react';
+import { useSpotifyContext } from './SongContext';
 
 interface AnimatedLogoProps {
-  isPlaying: boolean;
+  // isPlaying: boolean;
 }
 
-export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ isPlaying }) => (
-  <div className="flex flex-col items-center">
+export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({  }) =>{
+  const {isPlaying}=useSpotifyContext();
+ return (
+    <div className="flex flex-col items-center">
     {/* Animated Logo: Music note SVG with bounce only when playing */}
     <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className={`mb-2 drop-shadow-lg${isPlaying ? ' bounce-spotify-logo' : ''}`}>
       <circle cx="28" cy="28" r="28" fill="#1DB954"/>
@@ -36,3 +39,4 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ isPlaying }) => (
     </svg>
   </div>
 );
+} 

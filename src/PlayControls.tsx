@@ -6,7 +6,7 @@ interface PlayControlsProps {
   isLoggedIn: boolean;
   replayEnabled: boolean;
   spotifySdk: SpotifyApi | null;
-  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsPlaying: (isPlaying:boolean)=>void
   setLastPlayedTrack: React.Dispatch<any>;
   setReplayEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   lastPlayedTrack: any;
