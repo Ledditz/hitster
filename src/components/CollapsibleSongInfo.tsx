@@ -16,7 +16,7 @@ const CollapsibleSongInfo: React.FC = () => {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span>Last Played Song Info</span>
+        <span>Last Played Song</span>
         <span>{open ? "▲" : "▼"}</span>
       </button>
       {open && (

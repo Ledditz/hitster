@@ -9,11 +9,10 @@ import { checkSpotifyAuth } from "../utils/spotifyUtils"
 import CollapsibleSongInfo from "../components/CollapsibleSongInfo"
 
 interface QrModeProps {
-  setMode: (mode: "qr" | "playlist" | null) => void
   logOut: () => void
 }
 
-export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
+export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner()
   const { spotifySdk, setPlaying, setSongAndPlaying, song, currentDeviceId } = useSpotifyContext()
   const [playError, setPlayError] = useState<string | null>(null)
@@ -110,7 +109,7 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
         <button
           type="button"
           onClick={startQrScanner}
-          className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold shadow transition mb-2 flex items-center gap-2"
+          className="px-4 py-2 rounded-4xl bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold shadow transition mb-2 flex items-center gap-2"
         >
           {/* QR code icon */}
           <MdQrCode className="w-5 h-5" />
@@ -121,7 +120,7 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
         <button
           type="button"
           onClick={cancelQrScanner}
-          className="ml-2 px-4 py-2 rounded bg-red-500 hover:bg-red-600 text-white font-semibold shadow transition mb-2 flex items-center justify-center"
+          className="ml-2 px-4 py-2 rounded-4xl bg-red-500 hover:bg-red-600 text-white font-semibold shadow transition mb-2 flex items-center justify-center"
         >
           {/* X icon */}
           <MdClose className="w-5 h-5" />
@@ -143,13 +142,6 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
       />
       {/* Collapsible Last Played Song Info */}
       <CollapsibleSongInfo />
-      <button
-        type="button"
-        onClick={() => setMode(null)}
-        className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"
-      >
-        Back
-      </button>
     </div>
   )
 }

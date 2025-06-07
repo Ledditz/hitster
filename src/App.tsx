@@ -13,6 +13,7 @@ import { QrMode } from "./qr-mode/QrMode"
 import { PlaylistMode } from "./playlist-mode/PlaylistMode"
 import { SpotifyProvider, useSpotifyContext } from "./contexts/SongContext"
 import { GlobalToaster } from "./components/GlobalToaster"
+import { Header } from "./components/Header"
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -45,7 +46,7 @@ function AppContent() {
   }, [isLoggedIn, setSpotifySdk])
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pt-16 sm:pt-20 px-2 sm:px-4 flex flex-col items-stretch w-full">
+    <div className="min-h-screen bg-gray-900 text-white pt-20 sm:pt-20 px-2 sm:px-4 flex flex-col items-stretch w-full">
       <div className="flex flex-col items-center w-full">
         <AnimatedLogo />
       </div>
@@ -90,16 +91,12 @@ function AppContent() {
               </button>
             </div>
           )}
-          {mode === "qr" && (
-            <QrMode setMode={setMode} logOut={() => logOut(setIsLoggedIn, setSpotifySdk)} />
-          )}
+          {mode === "qr" && <QrMode logOut={() => logOut(setIsLoggedIn, setSpotifySdk)} />}
           {mode === "playlist" && (
-            <PlaylistMode
-              setMode={setMode}
-              logOut={() => logOut(setIsLoggedIn, setSpotifySdk)}
-              setIsLoggedIn={setIsLoggedIn}
-            />
+            <PlaylistMode logOut={() => logOut(setIsLoggedIn, setSpotifySdk)} />
           )}
+
+          {mode !== null && <Header mode={mode} onBack={() => setMode(null)} />}
         </>
       )}
     </div>
