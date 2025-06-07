@@ -51,8 +51,8 @@ function AppContent() {
         <div className="max-w-2xl mx-auto flex flex-col items-center">
           <AnimatedLogo />
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight mb-2 drop-shadow-lg">Spotify QR Scanner</h1>
-        <p className="text-lg text-gray-300 mb-2">Connect to your music, instantly.</p>
+        <p className="text-4xl font-extrabold tracking-tight drop-shadow-lg mt-4">Spotify QR Scanner</p>
+        <p className="text-lg text-gray-300 mb-3 -mt-1">Connect to your music, instantly.</p>
         {!isLoggedIn ? (
           <button onClick={handleSpotifyLogin} className="px-6 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Login with Spotify</button>
         ) : (

@@ -100,7 +100,12 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
           <MdClose className="w-5 h-5" />
         </button>
       )}
-      <div id="qr-video-container" className="my-4 aspect-square w-64 max-w-full" />
+      {/* Always render the video container, but only show it when scanning */}
+      <div
+        id="qr-video-container"
+        className={`my-4 aspect-square w-64 max-w-full ${scanning ? '' : 'invisible'}`}
+        style={{ height: scanning ? 'auto' : '0px' }}
+      />
       <DeviceSelect />
       {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
       {qrResult && (
