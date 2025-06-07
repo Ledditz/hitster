@@ -71,6 +71,7 @@ function AppContent() {
             {mode === 'qr' && (
               <QrMode
                 setMode={setMode}
+                logOut={()=>logOut(setIsLoggedIn,setSpotifySdk)}
               />
             )}
             {mode === 'playlist' && (

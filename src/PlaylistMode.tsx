@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PlayControls } from './PlayControls';
 import { useSpotifyContext } from './SongContext';
+import { checkSpotifyAuth } from './spotifyUtils';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface PlaylistModeProps {
@@ -11,13 +12,10 @@ interface PlaylistModeProps {
 
 export const PlaylistMode: React.FC<PlaylistModeProps> = ({
   setMode,
-  logOut,
-  setIsLoggedIn,
+  logOut
 }) => {
-  const { spotifySdk, selectedPlaylist, setSelectedPlaylist, setPlaying, isPlaying } = useSpotifyContext();
+  const { spotifySdk, selectedPlaylist, setSelectedPlaylist } = useSpotifyContext();
   const [playlists, setPlaylists] = useState<any[]>([]);
-  const [lastPlayedTrack, setLastPlayedTrack] = useState<any | null>(null);
-  const [replayEnabled, setReplayEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,15 +23,20 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = ({
     if (!spotifySdk) return;
     setLoading(true);
     setError(null);
+    checkSpotifyAuth((spotifySdk as any).accessToken, logOut);
     spotifySdk.currentUser.playlists.playlists()
       .then((data: any) => {
         setPlaylists(data.items);
         setLoading(false);
+        if(data.items.length===0){
+            logOut();
+        }
       })
       .catch(() => {
         setPlaylists([]);
         setError('Failed to load playlists.');
         setLoading(false);
+        logOut();
       });
   }, [spotifySdk]);
 
@@ -65,17 +68,6 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = ({
         <>
           <div className="mb-2">Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span></div>
           <PlayControls
-            isLoggedIn={true}
-            replayEnabled={replayEnabled}
-            spotifySdk={spotifySdk}
-            setIsPlaying={setPlaying}
-            setLastPlayedTrack={setLastPlayedTrack}
-            setReplayEnabled={setReplayEnabled}
-            lastPlayedTrack={lastPlayedTrack}
-            logOut={logOut}
-            setIsLoggedIn={setIsLoggedIn}
-            setSpotifySdk={() => {}}
-            playlist={selectedPlaylist}
           />
           <button onClick={() => setSelectedPlaylist(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Change Playlist</button>
           <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>

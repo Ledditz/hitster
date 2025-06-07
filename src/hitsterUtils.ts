@@ -28,12 +28,14 @@ export async function playHitsterSongFromQr({
   selectedDeviceId,
   setPlaying,
   setPlayError,
+  logOut
 }: {
   qrResult: string | null,
   spotifySdk: any,
   selectedDeviceId: string | null,
   setPlaying: (v: boolean) => void,
   setPlayError: (v: string | null) => void,
+  logOut:()=>void
 }) {
   setPlayError(null);
   if (!qrResult) return;
@@ -74,6 +76,7 @@ export async function playHitsterSongFromQr({
     const trackUri = `spotify:track:${trackId}`;
     if (!spotifySdk) {
       setPlayError('Spotify SDK not available. Please login.');
+      logOut()
       return;
     }
     if (!selectedDeviceId) {
