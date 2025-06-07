@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
-import { useSpotifyContext } from '../contexts/SongContext';
-import { FaMusic, FaUser, FaCalendarAlt } from 'react-icons/fa';
+import type React from "react"
+import { useState } from "react"
+import { useSpotifyContext } from "../contexts/SongContext"
+import { FaMusic, FaUser, FaCalendarAlt } from "react-icons/fa"
 
 const CollapsibleSongInfo: React.FC = () => {
-  const [open, setOpen] = useState(false);
-  const { song } = useSpotifyContext();
-  if (!song) return null;
-  const { title, artist, year } = song;
+  const [open, setOpen] = useState(false)
+  const { song } = useSpotifyContext()
+  if (!song) return null
+  const { title, artist, year } = song
   return (
     <div className="w-full max-w-xs my-2">
       <button
+        type="button"
         className="w-full flex justify-between items-center px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-t hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-semibold focus:outline-none"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
         <span>Last Played Song Info</span>
-        <span>{open ? '▲' : '▼'}</span>
+        <span>{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-b text-xs text-gray-900 dark:text-gray-100 border-t border-gray-300 dark:border-gray-600">
@@ -40,7 +42,7 @@ const CollapsibleSongInfo: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default CollapsibleSongInfo;
+export default CollapsibleSongInfo

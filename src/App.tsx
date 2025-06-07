@@ -1,38 +1,44 @@
-import { useState, useEffect } from 'react'
-import './App.css'
-import { SpotifyApi } from '@spotify/web-api-ts-sdk'
-import { handleSpotifyRedirect, getValidSpotifyToken, handleSpotifyLogin, logOut, SPOTIFY_CLIENT_ID } from './utils/spotifyAuth';
-import { AnimatedLogo } from './components/AnimatedLogo';
-import { QrMode } from './qr-mode/QrMode';
-import { DeviceProvider } from './contexts/DeviceContext';
-import { PlaylistMode } from './playlist-mode/PlaylistMode';
-import { SpotifyProvider, useSpotifyContext } from './contexts/SongContext';
+import { useState, useEffect } from "react"
+import "./App.css"
+import { SpotifyApi } from "@spotify/web-api-ts-sdk"
+import {
+  handleSpotifyRedirect,
+  getValidSpotifyToken,
+  handleSpotifyLogin,
+  logOut,
+  SPOTIFY_CLIENT_ID,
+} from "./utils/spotifyAuth"
+import { AnimatedLogo } from "./components/AnimatedLogo"
+import { QrMode } from "./qr-mode/QrMode"
+import { DeviceProvider } from "./contexts/DeviceContext"
+import { PlaylistMode } from "./playlist-mode/PlaylistMode"
+import { SpotifyProvider, useSpotifyContext } from "./contexts/SongContext"
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [mode, setMode] = useState<'qr' | 'playlist' | null>(null);
-  const { spotifySdk, setSpotifySdk } = useSpotifyContext();
+  const [mode, setMode] = useState<"qr" | "playlist" | null>(null)
+  const { spotifySdk, setSpotifySdk } = useSpotifyContext()
 
   // Handle Spotify OAuth redirect
   useEffect(() => {
-    handleSpotifyRedirect(setIsLoggedIn, setShowSuccess);
-  }, []);
+    handleSpotifyRedirect(setIsLoggedIn, setShowSuccess)
+  }, [])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    (async () => {
-      const token = await getValidSpotifyToken(setIsLoggedIn, setSpotifySdk);
+    ;(async () => {
+      const token = await getValidSpotifyToken(setIsLoggedIn, setSpotifySdk)
       if (token) {
-        setSpotifySdk(SpotifyApi.withAccessToken(
-          SPOTIFY_CLIENT_ID,
-          {
+        setSpotifySdk(
+          SpotifyApi.withAccessToken(SPOTIFY_CLIENT_ID, {
             access_token: token,
-            token_type: 'Bearer',
+            token_type: "Bearer",
             expires_in: 3600,
             expires: 0, // dummy value, not used
-            refresh_token: '' // not used for implicit flow
-          }
-        ))
+            refresh_token: "", // not used for implicit flow
+          }),
+        )
         setIsLoggedIn(true)
       }
     })()
@@ -51,30 +57,51 @@ function AppContent() {
         <div className="flex flex-col items-center w-full">
           <AnimatedLogo />
         </div>
-        <p className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-lg mt-4 text-center">Spotify QR Scanner</p>
-        <p className="text-base sm:text-lg text-gray-300 mb-3 -mt-1 text-center">Connect to your music, instantly.</p>
+        <p className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-lg mt-4 text-center">
+          Spotify QR Scanner
+        </p>
+        <p className="text-base sm:text-lg text-gray-300 mb-3 -mt-1 text-center">
+          Connect to your music, instantly.
+        </p>
         {!isLoggedIn ? (
-          <button onClick={handleSpotifyLogin} className="w-full max-w-xs mx-auto px-6 py-2 rounded bg-green-400 hover:bg-green-500 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-green-300 transition">Login with Spotify</button>
+          <button
+            type="button"
+            onClick={handleSpotifyLogin}
+            className="w-full max-w-xs mx-auto px-6 py-2 rounded bg-green-400 hover:bg-green-500 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-green-300 transition"
+          >
+            Login with Spotify
+          </button>
         ) : (
           <>
             {/* Add CSV process button for testing */}
             {/* <button onClick={handleProcessCsv} className="mb-4 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow transition">Process CSV & Log</button> */}
             {showSuccess && (
-              <div className="text-green-400 mb-4 font-medium text-center">Successfully logged in to Spotify!</div>
+              <div className="text-green-400 mb-4 font-medium text-center">
+                Successfully logged in to Spotify!
+              </div>
             )}
             {mode === null && (
               <div className="flex flex-col gap-4 mb-4 w-full max-w-xs mx-auto mt-4 items-center justify-center">
-                <button onClick={() => setMode('qr')} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition rounded-4xl w-50">QR/Hitster-Mode </button>
-                <button onClick={() => setMode('playlist')} className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-emerald-300 transition rounded-4xl w-50">Playlist-Mode</button>
+                <button
+                  type="button"
+                  onClick={() => setMode("qr")}
+                  className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition rounded-4xl w-50"
+                >
+                  QR/Hitster-Mode{" "}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("playlist")}
+                  className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-emerald-300 transition rounded-4xl w-50"
+                >
+                  Playlist-Mode
+                </button>
               </div>
             )}
-            {mode === 'qr' && (
-              <QrMode
-                setMode={setMode}
-                logOut={()=>logOut(setIsLoggedIn,setSpotifySdk)}
-              />
+            {mode === "qr" && (
+              <QrMode setMode={setMode} logOut={() => logOut(setIsLoggedIn, setSpotifySdk)} />
             )}
-            {mode === 'playlist' && (
+            {mode === "playlist" && (
               <PlaylistMode
                 setMode={setMode}
                 logOut={() => logOut(setIsLoggedIn, setSpotifySdk)}

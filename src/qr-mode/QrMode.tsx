@@ -1,38 +1,36 @@
-import React, { useEffect, useState } from 'react';
-import { useQrScanner } from './qrScanner';
-import { DeviceSelect } from '../components/DeviceSelect';
-import { playHitsterSongFromQr } from './hitsterUtils';
-import { useDevice } from '../contexts/DeviceContext';
-import { useSpotifyContext } from '../contexts/SongContext';
-import { MdQrCode, MdClose } from 'react-icons/md';
-import { PlayButtons } from '../components/PlayButtons';
-import { checkSpotifyAuth } from '../utils/spotifyUtils';
-import CollapsibleSongInfo from '../components/CollapsibleSongInfo';
+import React, { useEffect, useState } from "react"
+import { useQrScanner } from "./qrScanner"
+import { DeviceSelect } from "../components/DeviceSelect"
+import { playHitsterSongFromQr } from "./hitsterUtils"
+import { useDevice } from "../contexts/DeviceContext"
+import { useSpotifyContext } from "../contexts/SongContext"
+import { MdQrCode, MdClose } from "react-icons/md"
+import { PlayButtons } from "../components/PlayButtons"
+import { checkSpotifyAuth } from "../utils/spotifyUtils"
+import CollapsibleSongInfo from "../components/CollapsibleSongInfo"
 
 interface QrModeProps {
-  setMode: (mode: 'qr' | 'playlist' | null) => void;
-  logOut:()=>void
+  setMode: (mode: "qr" | "playlist" | null) => void
+  logOut: () => void
 }
 
-export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
-  const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner();
-  const { selectedDeviceId } = useDevice();
-  const {spotifySdk,setPlaying,setSongAndPlaying} = useSpotifyContext();
-  const [playError, setPlayError] = useState<string | null>(null);
+export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
+  const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner()
+  const { selectedDeviceId } = useDevice()
+  const { spotifySdk, setPlaying, setSongAndPlaying, song } = useSpotifyContext()
+  const [playError, setPlayError] = useState<string | null>(null)
   // Add replayEnabled state for replay button
-  const [replayEnabled, setReplayEnabled] = useState(false);
-  // Store last played track for replay
-  const [lastPlayedTrack, setLastPlayedTrack] = useState<any | null>(null);
+  const [replayEnabled, setReplayEnabled] = useState(false)
   // Timeout ref for playback pause
-  const playTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    const handlePlay = async ()=>{
-
+    const handlePlay = async () => {
       // Clear any previous timeout
       if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current);
-        playTimeoutRef.current = null;
+        clearTimeout(playTimeoutRef.current)
+        playTimeoutRef.current = null
       }
       const result = await playHitsterSongFromQr({
         qrResult,
@@ -40,86 +38,90 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
         selectedDeviceId,
         setPlayError,
         logOut,
-        setSongAndPlaying
-      });
-      if (result && result.trackUri) {
-        setReplayEnabled(true);
-        setLastPlayedTrack({ uri: result.trackUri }); // Replace with real track object if available
-        if (result.timeOut) playTimeoutRef.current = result.timeOut;
+        setSongAndPlaying,
+      })
+      if (result?.trackUri) {
+        setReplayEnabled(true)
+        if (result.timeOut) playTimeoutRef.current = result.timeOut
       }
     }
-    handlePlay();
+    handlePlay()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qrResult]);
+  }, [qrResult])
 
   // Clear timeout on unmount
   useEffect(() => {
     return () => {
       if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current);
-        playTimeoutRef.current = null;
+        clearTimeout(playTimeoutRef.current)
+        playTimeoutRef.current = null
       }
-    };
-  }, []);
+    }
+  }, [])
 
   // Check Spotify auth when spotifySdk changes
   useEffect(() => {
-    if (!spotifySdk) return;
-    // You may need to adjust how you get the access token:
-    // Replace 'spotifySdk.accessToken' with your actual access token source
-    checkSpotifyAuth((spotifySdk as any).accessToken, logOut);
-  }, [spotifySdk, logOut]);
+    if (!spotifySdk) return
+    const checkAuth = async () => {
+      const accessToken = await spotifySdk.getAccessToken()
+      checkSpotifyAuth(accessToken, logOut)
+    }
+    checkAuth()
+  }, [spotifySdk, logOut])
 
-  // Handler for replaying the last played song
+  // Handler for replaying the last played song using SongContext
   const handleReplaySong = async () => {
-    if (!spotifySdk || !lastPlayedTrack) return;
+    if (!spotifySdk || !song) return
     // Clear any previous timeout
     if (playTimeoutRef.current) {
-      clearTimeout(playTimeoutRef.current);
-      playTimeoutRef.current = null;
+      clearTimeout(playTimeoutRef.current)
+      playTimeoutRef.current = null
     }
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('spotify_access_token')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            uris: [lastPlayedTrack.uri],
-            position_ms: 30000
-          })
-        }
-      );
-      setPlaying(true);
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("spotify_access_token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uris: [song.spotifyLink.replace("https://open.spotify.com/track/", "spotify:track:")],
+          position_ms: 30000,
+        }),
+      })
+      setPlaying(true)
       playTimeoutRef.current = setTimeout(async () => {
         try {
           if (selectedDeviceId) {
-            await spotifySdk.player.pausePlayback(selectedDeviceId);
+            await spotifySdk.player.pausePlayback(selectedDeviceId)
           }
         } catch (e) {}
-        setPlaying(false);
-        playTimeoutRef.current = null;
-      }, 10000);
-    } catch (err: any) {
-      setPlayError('Failed to replay song: ' + (err?.message || err));
-      setPlaying(false);
+        setPlaying(false)
+        playTimeoutRef.current = null
+      }, 10000)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      setPlayError(`Failed to replay song: ${errorMessage}`)
+      setPlaying(false)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col items-center">
-      {!scanning&&<button
-        onClick={startQrScanner}
-        className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold shadow transition mb-2 flex items-center gap-2"
-      >
-        {/* QR code icon */}
-        <MdQrCode className="w-5 h-5" />
-        Scan
-      </button>}
+      {!scanning && (
+        <button
+          type="button"
+          onClick={startQrScanner}
+          className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold shadow transition mb-2 flex items-center gap-2"
+        >
+          {/* QR code icon */}
+          <MdQrCode className="w-5 h-5" />
+          Scan
+        </button>
+      )}
       {scanning && (
         <button
+          type="button"
           onClick={cancelQrScanner}
           className="ml-2 px-4 py-2 rounded bg-red-500 hover:bg-red-600 text-white font-semibold shadow transition mb-2 flex items-center justify-center"
         >
@@ -130,8 +132,8 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
       {/* Always render the video container, but only show it when scanning */}
       <div
         id="qr-video-container"
-        className={`my-4 aspect-square w-64 max-w-full ${scanning ? '' : 'invisible'}`}
-        style={{ height: scanning ? 'auto' : '0px' }}
+        className={`my-4 aspect-square w-64 max-w-full ${scanning ? "" : "invisible"}`}
+        style={{ height: scanning ? "auto" : "0px" }}
       />
       <DeviceSelect />
       {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
@@ -144,12 +146,12 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
       {/* Collapsible Last Played Song Info */}
       <CollapsibleSongInfo />
       <button
+        type="button"
         onClick={() => setMode(null)}
         className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"
       >
         Back
       </button>
-
     </div>
-  );
-};
+  )
+}

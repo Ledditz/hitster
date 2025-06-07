@@ -1,46 +1,49 @@
-import React, { useEffect, useState } from 'react';
-import { PlayControls } from './PlayControls';
-import { useSpotifyContext } from '../contexts/SongContext';
-import { checkSpotifyAuth } from '../utils/spotifyUtils';
-import type { Dispatch, SetStateAction } from 'react';
-import { PlaylistSelect } from './PlaylistSelect';
-import CollapsibleSongInfo from '../components/CollapsibleSongInfo';
+import type React from "react"
+import { useEffect, useState } from "react"
+import { PlayControls } from "./PlayControls"
+import { useSpotifyContext } from "../contexts/SongContext"
+import { checkSpotifyAuth } from "../utils/spotifyUtils"
+import type { Dispatch, SetStateAction } from "react"
+import { PlaylistSelect } from "./PlaylistSelect"
+import CollapsibleSongInfo from "../components/CollapsibleSongInfo"
+import type { SimplifiedPlaylist } from "@spotify/web-api-ts-sdk"
 
 interface PlaylistModeProps {
-  setMode: (mode: 'qr' | 'playlist' | null) => void;
-  logOut: () => void;
-  setIsLoggedIn: Dispatch<SetStateAction<boolean>>;
+  setMode: (mode: "qr" | "playlist" | null) => void
+  logOut: () => void
+  setIsLoggedIn: Dispatch<SetStateAction<boolean>>
 }
 
-export const PlaylistMode: React.FC<PlaylistModeProps> = ({
-  setMode,
-  logOut
-}) => {
-  const { spotifySdk, selectedPlaylist, setSelectedPlaylist } = useSpotifyContext();
-  const [playlists, setPlaylists] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const PlaylistMode: React.FC<PlaylistModeProps> = ({ setMode, logOut }) => {
+  const { spotifySdk, selectedPlaylist, setSelectedPlaylist } = useSpotifyContext()
+  const [playlists, setPlaylists] = useState<SimplifiedPlaylist[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    if (!spotifySdk) return;
-    setLoading(true);
-    setError(null);
-    checkSpotifyAuth((spotifySdk as any).accessToken, logOut);
-    spotifySdk.currentUser.playlists.playlists()
-      .then((data: any) => {
-        setPlaylists(data.items);
-        setLoading(false);
-        if(data.items.length===0){
-            logOut();
+    if (!spotifySdk) return
+    setLoading(true)
+    setError(null)
+    const fetchPlaylists = async () => {
+      const accessToken = await spotifySdk.getAccessToken()
+      await checkSpotifyAuth(accessToken, logOut)
+      try {
+        const data = await spotifySdk.currentUser.playlists.playlists()
+        setPlaylists(data.items)
+        setLoading(false)
+        if (data.items.length === 0) {
+          logOut()
         }
-      })
-      .catch(() => {
-        setPlaylists([]);
-        setError('Failed to load playlists.');
-        setLoading(false);
-        logOut();
-      });
-  }, [spotifySdk]);
+      } catch {
+        setPlaylists([])
+        setError("Failed to load playlists.")
+        setLoading(false)
+        logOut()
+      }
+    }
+    fetchPlaylists()
+  }, [spotifySdk])
 
   return (
     <div className="flex flex-col items-center">
@@ -53,17 +56,37 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = ({
             error={error}
             setSelectedPlaylist={setSelectedPlaylist}
           />
-          <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
+          <button
+            type="button"
+            onClick={() => setMode(null)}
+            className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"
+          >
+            Back
+          </button>
         </>
       ) : (
         <>
-          <div className="mb-2">Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span></div>
+          <div className="mb-2">
+            Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span>
+          </div>
           <PlayControls />
           <CollapsibleSongInfo />
-          <button onClick={() => setSelectedPlaylist(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Change Playlist</button>
-          <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
+          <button
+            type="button"
+            onClick={() => setSelectedPlaylist(null)}
+            className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"
+          >
+            Change Playlist
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode(null)}
+            className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"
+          >
+            Back
+          </button>
         </>
       )}
     </div>
-  );
-};
+  )
+}
