@@ -1,12 +1,9 @@
 import type React from "react"
-import { useEffect, useState } from "react"
 import { PlayControls } from "./PlayControls"
 import { useSpotifyContext } from "../contexts/SongContext"
-import { checkSpotifyAuth } from "../utils/spotifyUtils"
 import type { Dispatch, SetStateAction } from "react"
 import { PlaylistSelect } from "./PlaylistSelect"
 import CollapsibleSongInfo from "../components/CollapsibleSongInfo"
-import type { SimplifiedPlaylist } from "@spotify/web-api-ts-sdk"
 
 interface PlaylistModeProps {
   setMode: (mode: "qr" | "playlist" | null) => void
@@ -14,36 +11,9 @@ interface PlaylistModeProps {
   setIsLoggedIn: Dispatch<SetStateAction<boolean>>
 }
 
-export const PlaylistMode: React.FC<PlaylistModeProps> = ({ setMode, logOut }) => {
-  const { spotifySdk, selectedPlaylist, setSelectedPlaylist } = useSpotifyContext()
-  const [playlists, setPlaylists] = useState<SimplifiedPlaylist[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    if (!spotifySdk) return
-    setLoading(true)
-    setError(null)
-    const fetchPlaylists = async () => {
-      const accessToken = await spotifySdk.getAccessToken()
-      await checkSpotifyAuth(accessToken, logOut)
-      try {
-        const data = await spotifySdk.currentUser.playlists.playlists()
-        setPlaylists(data.items)
-        setLoading(false)
-        if (data.items.length === 0) {
-          logOut()
-        }
-      } catch {
-        setPlaylists([])
-        setError("Failed to load playlists.")
-        setLoading(false)
-        logOut()
-      }
-    }
-    fetchPlaylists()
-  }, [spotifySdk])
+export const PlaylistMode: React.FC<PlaylistModeProps> = ({ setMode }) => {
+  const { selectedPlaylist, setSelectedPlaylist, availablePlaylists, isLoadingPlaylists } =
+    useSpotifyContext()
 
   return (
     <div className="flex flex-col items-center">
@@ -51,9 +21,8 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = ({ setMode, logOut }) =
         <>
           <div className="mb-2">Select a playlist:</div>
           <PlaylistSelect
-            playlists={playlists}
-            loading={loading}
-            error={error}
+            playlists={availablePlaylists}
+            loading={isLoadingPlaylists}
             setSelectedPlaylist={setSelectedPlaylist}
           />
           <button

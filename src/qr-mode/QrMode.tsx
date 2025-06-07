@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react"
 import { useQrScanner } from "./qrScanner"
 import { DeviceSelect } from "../components/DeviceSelect"
 import { playHitsterSongFromQr } from "./hitsterUtils"
-import { useDevice } from "../contexts/DeviceContext"
 import { useSpotifyContext } from "../contexts/SongContext"
 import { MdQrCode, MdClose } from "react-icons/md"
 import { PlayButtons } from "../components/PlayButtons"
@@ -16,8 +15,7 @@ interface QrModeProps {
 
 export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner()
-  const { selectedDeviceId } = useDevice()
-  const { spotifySdk, setPlaying, setSongAndPlaying, song } = useSpotifyContext()
+  const { spotifySdk, setPlaying, setSongAndPlaying, song, currentDeviceId } = useSpotifyContext()
   const [playError, setPlayError] = useState<string | null>(null)
   // Add replayEnabled state for replay button
   const [replayEnabled, setReplayEnabled] = useState(false)
@@ -35,7 +33,7 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
       const result = await playHitsterSongFromQr({
         qrResult,
         spotifySdk,
-        selectedDeviceId,
+        selectedDeviceId: currentDeviceId,
         setPlayError,
         logOut,
         setSongAndPlaying,
@@ -78,7 +76,7 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
       playTimeoutRef.current = null
     }
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`, {
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${currentDeviceId}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("spotify_access_token")}`,
@@ -92,8 +90,8 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode, logOut }) => {
       setPlaying(true)
       playTimeoutRef.current = setTimeout(async () => {
         try {
-          if (selectedDeviceId) {
-            await spotifySdk.player.pausePlayback(selectedDeviceId)
+          if (currentDeviceId) {
+            await spotifySdk.player.pausePlayback(currentDeviceId)
           }
         } catch (e) {}
         setPlaying(false)

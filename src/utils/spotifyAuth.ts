@@ -1,6 +1,7 @@
 // Handles Spotify authentication and token management
 import type { SpotifyApi } from "@spotify/web-api-ts-sdk"
 import pkceChallenge from "pkce-challenge"
+import { toast } from "sonner"
 
 export const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
 export const SPOTIFY_REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI
@@ -30,6 +31,7 @@ export async function handleSpotifyRedirect(
       const data = await res.json()
       if (data.access_token) {
         setIsLoggedIn(true)
+        toast.success("Successfully logged in to Spotify!")
         setShowSuccess(true)
         localStorage.setItem("spotify_access_token", data.access_token)
         if (data.refresh_token) localStorage.setItem("spotify_refresh_token", data.refresh_token)
@@ -39,7 +41,7 @@ export async function handleSpotifyRedirect(
         }
         window.history.replaceState({}, document.title, "/")
       } else {
-        alert(
+        toast.error(
           `Failed to log in to Spotify. Please try again. ${data.error_description || data.error || ""}`,
         )
       }
@@ -92,7 +94,7 @@ export async function handleSpotifyLogin() {
     !window.crypto.subtle ||
     typeof window.crypto.subtle.digest !== "function"
   ) {
-    alert(
+    toast.error(
       "Your browser does not support the required cryptography features for Spotify login (PKCE S256). Please open this app in a modern browser.",
     )
     return

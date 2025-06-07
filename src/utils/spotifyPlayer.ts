@@ -1,5 +1,6 @@
 // Handles Spotify device and playback logic
 import type { Device, SpotifyApi } from "@spotify/web-api-ts-sdk"
+import { toast } from "sonner"
 
 export async function fetchDevices(
   spotifySdk: SpotifyApi,
@@ -13,6 +14,7 @@ export async function fetchDevices(
     setSelectedDeviceId(active ? active.id : devicesResponse.devices[0]?.id || null)
   } catch (e) {
     setDevices([])
+    toast.error("Failed to fetch Spotify devices.")
   }
 }
 
@@ -27,8 +29,9 @@ export async function transferPlayback(
     setSelectedDeviceId(deviceId)
     const devicesResponse = await spotifySdk.player.getAvailableDevices()
     setDevices(devicesResponse.devices)
+    toast.success("Playback transferred to selected device.")
   } catch (e) {
-    alert("Failed to transfer playback to selected device.")
+    toast.error("Failed to transfer playback to selected device.")
   }
 }
 
@@ -40,18 +43,18 @@ export async function playRandomSong(
   try {
     const playlists = await spotifySdk.currentUser.playlists.playlists()
     if (!playlists.items.length) {
-      alert("No playlists found!")
+      toast.error("No playlists found!")
       return
     }
     const randomPlaylist = playlists.items[Math.floor(Math.random() * playlists.items.length)]
     const tracks = await spotifySdk.playlists.getPlaylistItems(randomPlaylist.id)
     if (!tracks.items.length) {
-      alert("No tracks found in the playlist!")
+      toast.error("No tracks found in the playlist!")
       return
     }
     const validTracks = tracks.items.map((item) => item.track).filter((track) => track?.uri)
     if (!validTracks.length) {
-      alert("No playable tracks found in the playlist!")
+      toast.error("No playable tracks found in the playlist!")
       return
     }
     const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)]
@@ -60,7 +63,7 @@ export async function playRandomSong(
       devicesResponse.devices.find((d) => d.id === selectedDeviceId) ||
       devicesResponse.devices.find((d) => d.is_active)
     if (!activeDevice) {
-      alert(
+      toast.error(
         "No active Spotify device found. Please open Spotify on one of your devices and start playing any song, then try again.",
       )
       return
@@ -76,6 +79,7 @@ export async function playRandomSong(
         position_ms: 30000,
       }),
     })
+    toast.success(`Playing a random song from playlist: ${randomPlaylist.name}`)
     setTimeout(async () => {
       try {
         await spotifySdk.player.pausePlayback(activeDevice.id || "")
@@ -86,11 +90,11 @@ export async function playRandomSong(
   } catch (err) {
     console.error("Spotify playback error:", err)
     if (err instanceof Error && err.message) {
-      alert(
+      toast.error(
         `Failed to play a random song: ${err.message}\nMake sure you have Spotify Premium, an active device, and the correct permissions.`,
       )
     } else {
-      alert(
+      toast.error(
         "Failed to play a random song. Make sure you have Spotify Premium, an active device, and the correct permissions.",
       )
     }

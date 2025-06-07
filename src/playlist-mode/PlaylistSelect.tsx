@@ -4,18 +4,15 @@ import type React from "react"
 interface PlaylistSelectProps {
   playlists: SimplifiedPlaylist[]
   loading: boolean
-  error: string | null
   setSelectedPlaylist: (pl: SimplifiedPlaylist | null) => void
 }
 
 export const PlaylistSelect: React.FC<PlaylistSelectProps> = ({
   playlists,
   loading,
-  error,
   setSelectedPlaylist,
 }) => {
   if (loading) return <div className="mb-4">Loading playlists...</div>
-  if (error) return <div className="mb-4 text-red-400">{error}</div>
   if (playlists.length === 0) return <div className="mb-4">No playlists found.</div>
   return (
     <select
