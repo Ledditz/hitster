@@ -64,8 +64,8 @@ function AppContent() {
             )}
             {mode === null && (
               <div className="flex flex-col gap-4 mb-4 w-full max-w-xs mx-auto mt-4 items-center justify-center">
-                <button onClick={() => setMode('qr')} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition rounded-4xl w-50">QR Mode / Hitster</button>
-                <button onClick={() => setMode('playlist')} className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-emerald-300 transition rounded-4xl w-50">Spotify Playlist Mode</button>
+                <button onClick={() => setMode('qr')} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition rounded-4xl w-50">QR/Hitster-Mode </button>
+                <button onClick={() => setMode('playlist')} className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-emerald-300 transition rounded-4xl w-50">Playlist-Mode</button>
               </div>
             )}
             {mode === 'qr' && (

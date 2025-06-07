@@ -99,18 +99,19 @@ export async function playHitsterSongFromQr({
         })
       }
     );
-    setSongAndPlaying({
+    const song = {
       id,
       spotifyLink: trackUri,
       title:name,
       artist,
       year
-    }, true);
+    }
+    setSongAndPlaying(song, true);
     const timeOut = setTimeout(async () => {
       try {
         await spotifySdk.player.pausePlayback(selectedDeviceId);
       } catch (e) {}
-      setSongAndPlaying(null, false);
+      setSongAndPlaying(song, false);
     }, 10000);
     return {trackUri, timeOut};
   } catch (err: any) {

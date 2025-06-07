@@ -45,7 +45,6 @@ export const PlayControls: React.FC = () => {
       const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)];
       setLastPlayedTrack(randomTrack);
       setReplayEnabled(true);
-      console.log(randomTrack)
       setSongAndPlaying({
         id: randomTrack.id,
         spotifyLink: `https://open.spotify.com/track/${randomTrack.id}`,
