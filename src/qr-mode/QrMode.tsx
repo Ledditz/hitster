@@ -17,7 +17,7 @@ interface QrModeProps {
 export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner();
   const { selectedDeviceId } = useDevice();
-  const {spotifySdk,isPlaying,setPlaying,setSongAndPlaying} = useSpotifyContext();
+  const {spotifySdk,setPlaying,setSongAndPlaying} = useSpotifyContext();
   const [playError, setPlayError] = useState<string | null>(null);
   // Add replayEnabled state for replay button
   const [replayEnabled, setReplayEnabled] = useState(false);
@@ -135,12 +135,6 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
       />
       <DeviceSelect />
       {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
-      {qrResult && (
-        <p className="mb-2">
-          Last scanned QR: <span className="font-mono bg-gray-800 px-2 py-1 rounded">{qrResult}</span>
-        </p>
-      )}
-      {isPlaying && <div className="text-green-400 mb-2">Playing song...</div>}
       {playError && <div className="text-red-400 mb-2">{playError}</div>}
       <PlayButtons
         replayEnabled={replayEnabled}
