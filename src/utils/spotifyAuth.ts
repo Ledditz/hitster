@@ -10,40 +10,85 @@ export const SPOTIFY_SCOPES =
 
 export async function handleSpotifyRedirect(
   setIsLoggedIn: (v: boolean) => void,
-  setShowSuccess: (v: boolean) => void,
+  codeFromApp?: string,
 ) {
   const urlParams = new URLSearchParams(window.location.search)
-  const code = urlParams.get("code")
+  const code = codeFromApp ?? urlParams.get("code")
   if (code) {
     const storedVerifier = localStorage.getItem("spotify_code_verifier")
+    if (!storedVerifier) {
+      toast.error(
+        "Spotify login failed: Missing code verifier. Please try again and do not close or refresh the tab during login.",
+      )
+      return
+    }
     if (storedVerifier) {
-      const res = await fetch("https://accounts.spotify.com/api/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: SPOTIFY_CLIENT_ID,
-          grant_type: "authorization_code",
-          code,
-          redirect_uri: SPOTIFY_REDIRECT_URI,
-          code_verifier: storedVerifier,
-        }),
-      })
-      const data = await res.json()
-      if (data.access_token) {
+      try {
+        const res = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            client_id: SPOTIFY_CLIENT_ID,
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: SPOTIFY_REDIRECT_URI,
+            code_verifier: storedVerifier,
+          }),
+        })
+        localStorage.removeItem("spotify_code_verifier") // Always clear after use
+        let data: Record<string, unknown>
+        if (!res.ok) {
+          // Try to parse error as JSON, fallback to text
+          try {
+            data = await res.json()
+          } catch {
+            const errorText = await res.text()
+            data = { error: "unknown_error", error_description: errorText }
+          }
+          setIsLoggedIn(false)
+          localStorage.removeItem("spotify_access_token")
+          localStorage.removeItem("spotify_refresh_token")
+          localStorage.removeItem("spotify_expires_at")
+          toast.error(
+            `Failed to log in to Spotify. Please try again. ${data.error_description || data.error || ""}`,
+          )
+          window.history.replaceState({}, document.title, "/")
+          return
+        }
+        data = await res.json()
+        if (data.error || !data.access_token) {
+          setIsLoggedIn(false)
+          localStorage.removeItem("spotify_access_token")
+          localStorage.removeItem("spotify_refresh_token")
+          localStorage.removeItem("spotify_expires_at")
+          toast.error(
+            `Failed to log in to Spotify. Please try again. ${data.error_description || data.error || ""}`,
+          )
+          window.history.replaceState({}, document.title, "/")
+          return
+        }
+        // Only success path below
         setIsLoggedIn(true)
         toast.success("Successfully logged in to Spotify!")
-        setShowSuccess(true)
-        localStorage.setItem("spotify_access_token", data.access_token)
-        if (data.refresh_token) localStorage.setItem("spotify_refresh_token", data.refresh_token)
+        localStorage.setItem("spotify_access_token", String(data.access_token))
+        if (data.refresh_token)
+          localStorage.setItem("spotify_refresh_token", String(data.refresh_token))
         if (data.expires_in) {
-          const expiresAt = Date.now() + data.expires_in * 1000
+          const expiresAt = Date.now() + Number(data.expires_in) * 1000
           localStorage.setItem("spotify_expires_at", expiresAt.toString())
         }
         window.history.replaceState({}, document.title, "/")
-      } else {
-        toast.error(
-          `Failed to log in to Spotify. Please try again. ${data.error_description || data.error || ""}`,
-        )
+        return // Prevent error toast after successful login
+      } catch (err) {
+        localStorage.removeItem("spotify_code_verifier")
+        setIsLoggedIn(false)
+        localStorage.removeItem("spotify_access_token")
+        localStorage.removeItem("spotify_refresh_token")
+        localStorage.removeItem("spotify_expires_at")
+        let message = "An unknown error occurred during Spotify login."
+        if (err instanceof Error) message = err.message
+        toast.error(`Failed to log in to Spotify. ${message}`)
+        window.history.replaceState({}, document.title, "/")
       }
     }
   } else {

@@ -57,7 +57,6 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const fetchPlaylists = async () => {
     try {
       if (!spotifySdk) return
-      console.log("load playlists")
       setIsLoadingPlaylists(true)
       const playlistsResponse = await spotifySdk.currentUser.playlists.playlists()
       setAvailablePlaylists(playlistsResponse.items)
