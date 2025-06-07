@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { SpotifyApi } from '@spotify/web-api-ts-sdk'
 import { handleSpotifyRedirect, getValidSpotifyToken, handleSpotifyLogin, logOut, SPOTIFY_CLIENT_ID } from './spotifyAuth';
-import { useQrScanner } from './qrScanner';
 import { PlayControls } from './PlayControls';
-import { DeviceSelect } from './DeviceSelect';
 import { AnimatedLogo } from './AnimatedLogo';
+import { QrMode } from './QrMode';
 
 // Use import.meta.env for Vite env variables
 function App() {
@@ -19,12 +18,6 @@ function App() {
   const [mode, setMode] = useState<'qr' | 'playlist' | null>(null);
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<any | null>(null);
-
-  // Devices state and fetch for both modes
-  const [devices, setDevices] = useState<any[]>([]);
-
-  // Use QR scanner hook
-  const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner();
 
   // Handle Spotify OAuth redirect
   useEffect(() => {
@@ -73,21 +66,31 @@ function App() {
   }, [mode, spotifySdk])
 
   // Devices fetch logic
-  useEffect(() => {
-    const fetchDevices = async () => {
-      if (!spotifySdk) return;
-      try {
-        const devicesResponse = await spotifySdk.player.getAvailableDevices();
-        setDevices(devicesResponse.devices);
-      } catch (e) {
-        setDevices([]);
-      }
-    };
-    fetchDevices();
-  }, [spotifySdk]);
+  // useEffect(() => {
+  //   const fetchDevices = async () => {
+  //     if (!spotifySdk) return;
+  //     try {
+  //       const devicesResponse = await spotifySdk.player.getAvailableDevices();
+  //       setDevices(devicesResponse.devices);
+  //     } catch (e) {
+  //       setDevices([]);
+  //     }
+  //   };
+  //   fetchDevices();
+  // }, [spotifySdk]);
+
+  // Add a handler to process the CSV and log the result
+  // const handleProcessCsv = async () => {
+  //   if (!spotifySdk) return;
+  //   // Fetch the CSV file from public folder
+  //   const response = await fetch('/hitster/hitster-de-aaaa0015.csv');
+  //   const csvText = await response.text();
+  //   const newCsv = await updateCsvWithSpotifyLinks(csvText, spotifySdk);
+  //   console.log(newCsv);
+  // };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pt-20 px-4 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-gray-900 text-white pt-20 px-4 flex flex-col items-center">
       <div className="max-w-2xl mx-auto flex flex-col items-center">
         <AnimatedLogo isPlaying={isPlaying} />
       </div>
@@ -97,6 +100,8 @@ function App() {
         <button onClick={handleSpotifyLogin} className="px-6 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Login with Spotify</button>
       ) : (
         <>
+          {/* Add CSV process button for testing */}
+          {/* <button onClick={handleProcessCsv} className="mb-4 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow transition">Process CSV & Log</button> */}
           {showSuccess && (
             <div className="text-green-400 mb-4 font-medium">Successfully logged in to Spotify!</div>
           )}
@@ -107,18 +112,9 @@ function App() {
             </div>
           )}
           {mode === 'qr' && (
-            <div className="flex flex-col items-center">
-              <button onClick={startQrScanner} disabled={scanning} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-semibold shadow transition mb-2">
-                {scanning ? 'Scanning...' : 'Scan QR Code'}
-              </button>
-              {scanning && (
-                <button onClick={cancelQrScanner} className="ml-2 px-4 py-2 rounded bg-red-500 hover:bg-red-600 text-white font-semibold shadow transition mb-2">Cancel Scan</button>
-              )}
-              <div id="qr-video-container" className="my-4" />
-              {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
-              {qrResult && <p className="mb-2">Last scanned QR: <span className="font-mono bg-gray-800 px-2 py-1 rounded">{qrResult}</span></p>}
-              <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
-            </div>
+            <QrMode
+              setMode={setMode}
+            />
           )}
           {mode === 'playlist' && (
             <div className="flex flex-col items-center">

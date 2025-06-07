@@ -35,7 +35,6 @@ export function useQrScanner() {
         setScanning(false);
         scanner.stop();
         setQrScannerInstance(null);
-        console.log('Scanned QR code:', result.data);
       },
       {
         highlightScanRegion: true,
