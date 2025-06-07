@@ -22,24 +22,44 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
   const [replayEnabled, setReplayEnabled] = useState(false);
   // Store last played track for replay
   const [lastPlayedTrack, setLastPlayedTrack] = useState<any | null>(null);
+  // Timeout ref for playback pause
+  const playTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    playHitsterSongFromQr({
-      qrResult,
-      spotifySdk,
-      selectedDeviceId,
-      setPlaying,
-      setPlayError,
-      logOut
-    });
-    // If a song was played, enable replay and store track info
-    if (qrResult && spotifySdk && selectedDeviceId) {
-      // This is a simplification: in a real app, you would get the track info from the QR/csv
-      setReplayEnabled(true);
-      setLastPlayedTrack({ uri: qrResult }); // Replace with real track object if available
+    const handlePlay = async ()=>{
+
+      // Clear any previous timeout
+      if (playTimeoutRef.current) {
+        clearTimeout(playTimeoutRef.current);
+        playTimeoutRef.current = null;
+      }
+      const result = await playHitsterSongFromQr({
+        qrResult,
+        spotifySdk,
+        selectedDeviceId,
+        setPlaying,
+        setPlayError,
+        logOut
+      });
+      if (result && result.trackUri) {
+        setReplayEnabled(true);
+        setLastPlayedTrack({ uri: result.trackUri }); // Replace with real track object if available
+        if (result.timeOut) playTimeoutRef.current = result.timeOut;
+      }
     }
+    handlePlay();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qrResult]);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (playTimeoutRef.current) {
+        clearTimeout(playTimeoutRef.current);
+        playTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Check Spotify auth when spotifySdk changes
   useEffect(() => {
@@ -52,8 +72,12 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
   // Handler for replaying the last played song
   const handleReplaySong = async () => {
     if (!spotifySdk || !lastPlayedTrack) return;
+    // Clear any previous timeout
+    if (playTimeoutRef.current) {
+      clearTimeout(playTimeoutRef.current);
+      playTimeoutRef.current = null;
+    }
     try {
-      setPlaying(true);
       await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
         {
           method: 'PUT',
@@ -67,13 +91,15 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
           })
         }
       );
-      setTimeout(async () => {
+      setPlaying(true);
+      playTimeoutRef.current = setTimeout(async () => {
         try {
           if (selectedDeviceId) {
             await spotifySdk.player.pausePlayback(selectedDeviceId);
           }
         } catch (e) {}
         setPlaying(false);
+        playTimeoutRef.current = null;
       }, 10000);
     } catch (err: any) {
       setPlayError('Failed to replay song: ' + (err?.message || err));
@@ -120,12 +146,44 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
         replaySong={handleReplaySong}
         showDeviceSelect={false}
       />
+      {/* Collapsible Last Played Song Info */}
+      {lastPlayedTrack && (
+        <CollapsibleSongInfo lastPlayedTrack={lastPlayedTrack} />
+      )}
       <button
         onClick={() => setMode(null)}
         className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"
       >
         Back
       </button>
+
+    </div>
+  );
+};
+
+// CollapsibleSongInfo component
+const CollapsibleSongInfo: React.FC<{ lastPlayedTrack: any }> = ({ lastPlayedTrack }) => {
+  const [open, setOpen] = useState(false);
+  // Dummy fields for demonstration; replace with real fields if available
+  const { uri, name, artist, album } = lastPlayedTrack;
+  return (
+    <div className="w-full max-w-xs my-2">
+      <button
+        className="w-full flex justify-between items-center px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-t hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-semibold focus:outline-none"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span>Last Played Song Info</span>
+        <span>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-b text-xs text-gray-900 dark:text-gray-100 border-t border-gray-300 dark:border-gray-600">
+          <div><span className="font-semibold">URI:</span> <span className="font-mono">{uri}</span></div>
+          {name && <div><span className="font-semibold">Title:</span> {name}</div>}
+          {artist && <div><span className="font-semibold">Artist:</span> {artist}</div>}
+          {album && <div><span className="font-semibold">Album:</span> {album}</div>}
+        </div>
+      )}
     </div>
   );
 };

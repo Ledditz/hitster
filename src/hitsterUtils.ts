@@ -83,7 +83,6 @@ export async function playHitsterSongFromQr({
       setPlayError('No Spotify device selected.');
       return;
     }
-    setPlaying(true);
     // Play the song using Spotify API
     await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`,
       {
@@ -98,12 +97,15 @@ export async function playHitsterSongFromQr({
         })
       }
     );
-    setTimeout(async () => {
+    setPlaying(true);
+
+    const timeOut = setTimeout(async () => {
       try {
         await spotifySdk.player.pausePlayback(selectedDeviceId);
       } catch (e) {}
       setPlaying(false);
     }, 10000);
+    return {trackUri,timeOut}
   } catch (err: any) {
     setPlayError('Failed to play song: ' + (err?.message || err));
     setPlaying(false);

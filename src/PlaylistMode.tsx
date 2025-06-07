@@ -3,6 +3,7 @@ import { PlayControls } from './PlayControls';
 import { useSpotifyContext } from './SongContext';
 import { checkSpotifyAuth } from './spotifyUtils';
 import type { Dispatch, SetStateAction } from 'react';
+import { PlaylistSelect } from './PlaylistSelect';
 
 interface PlaylistModeProps {
   setMode: (mode: 'qr' | 'playlist' | null) => void;
@@ -45,30 +46,18 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = ({
       {!selectedPlaylist ? (
         <>
           <div className="mb-2">Select a playlist:</div>
-          {loading ? (
-            <div className="mb-4">Loading playlists...</div>
-          ) : error ? (
-            <div className="mb-4 text-red-400">{error}</div>
-          ) : playlists.length === 0 ? (
-            <div className="mb-4">No playlists found.</div>
-          ) : (
-            <select className="mb-4 px-3 py-2 rounded text-black" onChange={e => {
-              const pl = playlists.find(p => p.id === e.target.value);
-              setSelectedPlaylist(pl || null);
-            }} defaultValue="">
-              <option value="" disabled>Select...</option>
-              {playlists.map((pl) => (
-                <option key={pl.id} value={pl.id}>{pl.name}</option>
-              ))}
-            </select>
-          )}
+          <PlaylistSelect
+            playlists={playlists}
+            loading={loading}
+            error={error}
+            setSelectedPlaylist={setSelectedPlaylist}
+          />
           <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
         </>
       ) : (
         <>
           <div className="mb-2">Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span></div>
-          <PlayControls
-          />
+          <PlayControls />
           <button onClick={() => setSelectedPlaylist(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Change Playlist</button>
           <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
         </>

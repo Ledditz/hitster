@@ -47,25 +47,25 @@ function AppContent() {
 
   return (
     <DeviceProvider spotifySdk={spotifySdk}>
-      <div className="min-h-screen bg-gray-900 text-white pt-20 px-4 flex flex-col items-center">
-        <div className="max-w-2xl mx-auto flex flex-col items-center">
+      <div className="min-h-screen bg-gray-900 text-white pt-16 sm:pt-20 px-2 sm:px-4 flex flex-col items-stretch w-full">
+        <div className="flex flex-col items-center w-full">
           <AnimatedLogo />
         </div>
-        <p className="text-4xl font-extrabold tracking-tight drop-shadow-lg mt-4">Spotify QR Scanner</p>
-        <p className="text-lg text-gray-300 mb-3 -mt-1">Connect to your music, instantly.</p>
+        <p className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-lg mt-4 text-center">Spotify QR Scanner</p>
+        <p className="text-base sm:text-lg text-gray-300 mb-3 -mt-1 text-center">Connect to your music, instantly.</p>
         {!isLoggedIn ? (
-          <button onClick={handleSpotifyLogin} className="px-6 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Login with Spotify</button>
+          <button onClick={handleSpotifyLogin} className="w-full max-w-xs mx-auto px-6 py-2 rounded bg-green-400 hover:bg-green-500 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-green-300 transition">Login with Spotify</button>
         ) : (
           <>
             {/* Add CSV process button for testing */}
             {/* <button onClick={handleProcessCsv} className="mb-4 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow transition">Process CSV & Log</button> */}
             {showSuccess && (
-              <div className="text-green-400 mb-4 font-medium">Successfully logged in to Spotify!</div>
+              <div className="text-green-400 mb-4 font-medium text-center">Successfully logged in to Spotify!</div>
             )}
             {mode === null && (
-              <div className="flex flex-col gap-4 mb-4">
-                <button onClick={() => setMode('qr')} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow transition">QR Code Mode</button>
-                <button onClick={() => setMode('playlist')} className="px-4 py-2 rounded bg-green-500 hover:bg-green-600 text-white font-semibold shadow transition">Spotify Playlist Mode</button>
+              <div className="flex flex-col gap-4 mb-4 w-full max-w-xs mx-auto mt-4 items-center justify-center">
+                <button onClick={() => setMode('qr')} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition rounded-4xl w-50">QR Mode / Hitster</button>
+                <button onClick={() => setMode('playlist')} className="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg border-2 border-white focus:outline-none focus:ring-2 focus:ring-emerald-300 transition rounded-4xl w-50">Spotify Playlist Mode</button>
               </div>
             )}
             {mode === 'qr' && (
