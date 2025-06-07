@@ -86,3 +86,16 @@ export async function playRandomSong(spotifySdk: SpotifyApi, selectedDeviceId: s
     logOut();
   }
 }
+
+export async function getCurrentPlayback(spotifySdk: SpotifyApi) {
+  try {
+    const playback = await spotifySdk.player.getPlaybackState();
+    if (!playback || !playback.item) {
+      return null;
+    }
+    return playback.item;
+  } catch (e) {
+    console.error('Failed to fetch current playback:', e);
+    return null;
+  }
+}

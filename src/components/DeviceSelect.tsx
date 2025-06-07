@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDevice } from './contexts/DeviceContext';
+import { useDevice } from '../contexts/DeviceContext';
 
 export const DeviceSelect: React.FC = () => {
   const { selectedDeviceId, devices, setDevice } = useDevice();

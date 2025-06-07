@@ -7,6 +7,7 @@ import { useSpotifyContext } from '../contexts/SongContext';
 import { MdQrCode, MdClose } from 'react-icons/md';
 import { PlayButtons } from '../components/PlayButtons';
 import { checkSpotifyAuth } from '../utils/spotifyUtils';
+import CollapsibleSongInfo from '../components/CollapsibleSongInfo';
 
 interface QrModeProps {
   setMode: (mode: 'qr' | 'playlist' | null) => void;
@@ -16,7 +17,7 @@ interface QrModeProps {
 export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner();
   const { selectedDeviceId } = useDevice();
-  const {spotifySdk,isPlaying,setPlaying} = useSpotifyContext();
+  const {spotifySdk,isPlaying,setPlaying,setSongAndPlaying} = useSpotifyContext();
   const [playError, setPlayError] = useState<string | null>(null);
   // Add replayEnabled state for replay button
   const [replayEnabled, setReplayEnabled] = useState(false);
@@ -37,9 +38,9 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
         qrResult,
         spotifySdk,
         selectedDeviceId,
-        setPlaying,
         setPlayError,
-        logOut
+        logOut,
+        setSongAndPlaying
       });
       if (result && result.trackUri) {
         setReplayEnabled(true);
@@ -147,9 +148,7 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
         showDeviceSelect={false}
       />
       {/* Collapsible Last Played Song Info */}
-      {lastPlayedTrack && (
-        <CollapsibleSongInfo lastPlayedTrack={lastPlayedTrack} />
-      )}
+      <CollapsibleSongInfo />
       <button
         onClick={() => setMode(null)}
         className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm"
@@ -157,33 +156,6 @@ export const QrMode: React.FC<QrModeProps> = ({ setMode,logOut }) => {
         Back
       </button>
 
-    </div>
-  );
-};
-
-// CollapsibleSongInfo component
-const CollapsibleSongInfo: React.FC<{ lastPlayedTrack: any }> = ({ lastPlayedTrack }) => {
-  const [open, setOpen] = useState(false);
-  // Dummy fields for demonstration; replace with real fields if available
-  const { uri, name, artist, album } = lastPlayedTrack;
-  return (
-    <div className="w-full max-w-xs my-2">
-      <button
-        className="w-full flex justify-between items-center px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-t hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-semibold focus:outline-none"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
-        <span>Last Played Song Info</span>
-        <span>{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-b text-xs text-gray-900 dark:text-gray-100 border-t border-gray-300 dark:border-gray-600">
-          <div><span className="font-semibold">URI:</span> <span className="font-mono">{uri}</span></div>
-          {name && <div><span className="font-semibold">Title:</span> {name}</div>}
-          {artist && <div><span className="font-semibold">Artist:</span> {artist}</div>}
-          {album && <div><span className="font-semibold">Album:</span> {album}</div>}
-        </div>
-      )}
     </div>
   );
 };

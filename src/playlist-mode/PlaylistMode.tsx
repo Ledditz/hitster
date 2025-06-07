@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { PlayControls } from './PlayControls';
-import { useSpotifyContext } from './SongContext';
-import { checkSpotifyAuth } from './spotifyUtils';
+import { useSpotifyContext } from '../contexts/SongContext';
+import { checkSpotifyAuth } from '../utils/spotifyUtils';
 import type { Dispatch, SetStateAction } from 'react';
 import { PlaylistSelect } from './PlaylistSelect';
+import CollapsibleSongInfo from '../components/CollapsibleSongInfo';
 
 interface PlaylistModeProps {
   setMode: (mode: 'qr' | 'playlist' | null) => void;
@@ -58,6 +59,7 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = ({
         <>
           <div className="mb-2">Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span></div>
           <PlayControls />
+          <CollapsibleSongInfo />
           <button onClick={() => setSelectedPlaylist(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Change Playlist</button>
           <button onClick={() => setMode(null)} className="mt-2 px-3 py-1 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm">Back</button>
         </>

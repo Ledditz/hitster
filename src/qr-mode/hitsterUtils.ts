@@ -26,15 +26,15 @@ export async function playHitsterSongFromQr({
   qrResult,
   spotifySdk,
   selectedDeviceId,
-  setPlaying,
   setPlayError,
+  setSongAndPlaying,
   logOut
 }: {
   qrResult: string | null,
   spotifySdk: any,
   selectedDeviceId: string | null,
-  setPlaying: (v: boolean) => void,
   setPlayError: (v: string | null) => void,
+  setSongAndPlaying: (song: any, playing: boolean) => void,
   logOut:()=>void
 }) {
   setPlayError(null);
@@ -56,7 +56,7 @@ export async function playHitsterSongFromQr({
     const lines = csvText.split(/\r?\n/).filter(Boolean);
     let found = null;
     for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].match(/(?:"[^"]*"|[^,])+/g)?.map(s => s.replace(/^"|"$/g, ''));
+      const cols = lines[i].match(/(:?"[^"]*"|[^,])+/g)?.map(s => s.replace(/^"|"$/g, ''));
       if (!cols || cols.length < 5) continue;
       if (cols[0] === parsedId) {
         found = cols;
@@ -67,7 +67,7 @@ export async function playHitsterSongFromQr({
       setPlayError('Song not found in CSV.');
       return;
     }
-    const spotifyUrl = found[4];
+    const [id, name, artist, album, spotifyUrl] = found;
     if (!spotifyUrl || !spotifyUrl.startsWith('https://open.spotify.com/track/')) {
       setPlayError('No Spotify link found for this song.');
       return;
@@ -76,7 +76,7 @@ export async function playHitsterSongFromQr({
     const trackUri = `spotify:track:${trackId}`;
     if (!spotifySdk) {
       setPlayError('Spotify SDK not available. Please login.');
-      logOut()
+      logOut();
       return;
     }
     if (!selectedDeviceId) {
@@ -97,17 +97,21 @@ export async function playHitsterSongFromQr({
         })
       }
     );
-    setPlaying(true);
-
+    setSongAndPlaying({
+      uri: trackUri,
+      name,
+      artist,
+      album
+    }, true);
     const timeOut = setTimeout(async () => {
       try {
         await spotifySdk.player.pausePlayback(selectedDeviceId);
       } catch (e) {}
-      setPlaying(false);
+      setSongAndPlaying(null, false);
     }, 10000);
-    return {trackUri,timeOut}
+    return {trackUri, timeOut};
   } catch (err: any) {
     setPlayError('Failed to play song: ' + (err?.message || err));
-    setPlaying(false);
+    setSongAndPlaying(null, false);
   }
 }
