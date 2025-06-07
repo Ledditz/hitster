@@ -6,6 +6,7 @@ export interface SongData {
   spotifyLink: string;
   artist: string;
   title: string;
+  year:string;
 }
 
 interface SpotifyContextType {

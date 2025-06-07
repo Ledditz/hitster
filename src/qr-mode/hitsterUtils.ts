@@ -1,3 +1,5 @@
+import type { SongData } from "../contexts/SongContext";
+
 export     function parseHitsterUrl(url:string): { lang: string; id: string } | null {
         const regex = /^(?:http:\/\/|https:\/\/)?www\.hitstergame\.com\/(.+?)\/(\d+)$/;
         const match = url.match(regex);
@@ -34,7 +36,7 @@ export async function playHitsterSongFromQr({
   spotifySdk: any,
   selectedDeviceId: string | null,
   setPlayError: (v: string | null) => void,
-  setSongAndPlaying: (song: any, playing: boolean) => void,
+  setSongAndPlaying: (song:SongData|null, playing: boolean) => void,
   logOut:()=>void
 }) {
   setPlayError(null);
@@ -67,7 +69,7 @@ export async function playHitsterSongFromQr({
       setPlayError('Song not found in CSV.');
       return;
     }
-    const [id, name, artist, album, spotifyUrl] = found;
+    const [id, name, artist, year, spotifyUrl] = found;
     if (!spotifyUrl || !spotifyUrl.startsWith('https://open.spotify.com/track/')) {
       setPlayError('No Spotify link found for this song.');
       return;
@@ -98,10 +100,11 @@ export async function playHitsterSongFromQr({
       }
     );
     setSongAndPlaying({
-      uri: trackUri,
-      name,
+      id,
+      spotifyLink: trackUri,
+      title:name,
       artist,
-      album
+      year
     }, true);
     const timeOut = setTimeout(async () => {
       try {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSpotifyContext } from '../contexts/SongContext';
 import { PlayButtons } from '../components/PlayButtons';
+import type { PlaylistedTrack, TrackItem } from '@spotify/web-api-ts-sdk';
 
 export const PlayControls: React.FC = () => {
   const {
@@ -39,16 +40,18 @@ export const PlayControls: React.FC = () => {
     setPlaying(true);
     try {
       const tracks = await spotifySdk.playlists.getPlaylistItems(selectedPlaylist.id);
-      const validTracks = tracks.items.map((item: any) => item.track).filter((track: any) => track && track.uri);
+      const validTracks = tracks.items.map((item: PlaylistedTrack) => item.track).filter((track: TrackItem) => track && track.uri);
       if (!validTracks.length) return;
       const randomTrack = validTracks[Math.floor(Math.random() * validTracks.length)];
       setLastPlayedTrack(randomTrack);
       setReplayEnabled(true);
+      console.log(randomTrack)
       setSongAndPlaying({
         id: randomTrack.id,
         spotifyLink: `https://open.spotify.com/track/${randomTrack.id}`,
-        artist: randomTrack.artists?.[0]?.name || '',
+        artist: (randomTrack as any).artists?.[0]?.name || '',
         title: randomTrack.name,
+        year:''
       }, true);
       const devicesResponse = await spotifySdk.player.getAvailableDevices();
       const activeDevice = devicesResponse.devices.find((d: any) => d.is_active);

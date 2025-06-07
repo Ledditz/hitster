@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useSpotifyContext } from '../contexts/SongContext';
-import { FaSpotify, FaMusic, FaUser } from 'react-icons/fa';
+import { FaMusic, FaUser, FaCalendarAlt } from 'react-icons/fa';
 
 const CollapsibleSongInfo: React.FC = () => {
   const [open, setOpen] = useState(false);
   const { song } = useSpotifyContext();
   if (!song) return null;
-  const { spotifyLink, title, artist } = song;
+  const { title, artist, year } = song;
   return (
     <div className="w-full max-w-xs my-2">
       <button
@@ -29,6 +29,12 @@ const CollapsibleSongInfo: React.FC = () => {
             <div className="flex items-center gap-2 mt-1">
               <FaUser className="inline text-yellow-500" />
               <span className="font-semibold">Artist:</span> {artist}
+            </div>
+          )}
+          {year && (
+            <div className="flex items-center gap-2 mt-1">
+              <FaCalendarAlt className="inline text-blue-500" />
+              <span className="font-semibold">Year:</span> {year}
             </div>
           )}
         </div>
