@@ -6,16 +6,11 @@ import CollapsibleSongInfo from "../components/CollapsibleSongInfo"
 import { MdRefresh } from "react-icons/md"
 
 interface PlaylistModeProps {
-  logOut: () => void
   playbackMode: "beginning" | "custom" | "random"
   customStartTime: number
 }
 
-export const PlaylistMode: React.FC<PlaylistModeProps> = ({
-  logOut,
-  playbackMode,
-  customStartTime,
-}) => {
+export const PlaylistMode: React.FC<PlaylistModeProps> = ({ playbackMode, customStartTime }) => {
   const {
     selectedPlaylist,
     setSelectedPlaylist,

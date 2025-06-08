@@ -4,99 +4,60 @@ import { playHitsterSongFromQr } from "./hitsterUtils"
 import { useSpotifyContext } from "../contexts/SongContext"
 import { MdQrCode, MdClose } from "react-icons/md"
 import { PlayButtons } from "../components/PlayButtons"
-import { checkSpotifyAuth } from "../utils/spotifyUtils"
 import CollapsibleSongInfo from "../components/CollapsibleSongInfo"
 
 interface QrModeProps {
-  logOut: () => void
   playbackMode: "beginning" | "custom" | "random"
   customStartTime: number
 }
 
-export const QrMode: React.FC<QrModeProps> = ({ logOut, playbackMode, customStartTime }) => {
+export const QrMode: React.FC<QrModeProps> = ({ playbackMode, customStartTime }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner()
-  const { spotifySdk, setPlaying, setSongAndPlaying, song, currentDeviceId, pauseCurrentPlay } =
-    useSpotifyContext()
+  const { playTrack, setPlaying, setSongAndPlaying, song, pauseCurrentPlay } = useSpotifyContext()
   const [playError, setPlayError] = useState<string | null>(null)
-  // Add replayEnabled state for replay button
   const [replayEnabled, setReplayEnabled] = useState(false)
-  // Timeout ref for playback pause
   const playTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // Helper to get start time based on mode
+  const getStartTime = React.useCallback(() => {
+    if (playbackMode === "beginning") return 0
+    if (playbackMode === "custom") return customStartTime * 1000
+    return Math.floor(Math.random() * 90_000)
+  }, [playbackMode, customStartTime])
+
   useEffect(() => {
     const handlePlay = async () => {
-      // Clear any previous timeout
       if (playTimeoutRef.current) {
         clearTimeout(playTimeoutRef.current)
         playTimeoutRef.current = null
       }
       const result = await playHitsterSongFromQr({
         qrResult,
-        spotifySdk,
-        selectedDeviceId: currentDeviceId,
+        playTrack: (trackUri, position_ms) => playTrack(trackUri, position_ms ?? 30000),
         setPlayError,
-        logOut,
         setSongAndPlaying,
-        position_ms: getStartTime(), // use selected playback mode
+        position_ms: getStartTime(),
       })
       if (result?.trackUri) {
         setReplayEnabled(true)
-        if (result.timeOut) playTimeoutRef.current = result.timeOut
       }
     }
     handlePlay()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qrResult])
-
-  // Clear timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current)
-        playTimeoutRef.current = null
-      }
-    }
-  }, [])
-
-  // Check Spotify auth when spotifySdk changes
-  useEffect(() => {
-    if (!spotifySdk) return
-    const checkAuth = async () => {
-      const accessToken = await spotifySdk.getAccessToken()
-      checkSpotifyAuth(accessToken, logOut)
-    }
-    checkAuth()
-  }, [spotifySdk, logOut])
-
-  // Helper to get start time based on mode
-  const getStartTime = () => {
-    if (playbackMode === "beginning") return 0
-    if (playbackMode === "custom") return customStartTime * 1000
-    // random between 0 and 90 seconds
-    return Math.floor(Math.random() * 90_000)
-  }
+  }, [qrResult, playTrack, setSongAndPlaying, getStartTime])
 
   // Handler for replaying the last played song using SongContext
   const handleReplaySong = async () => {
-    if (!spotifySdk || !song) return
-    // Clear any previous timeout
+    if (!song) return
     if (playTimeoutRef.current) {
       clearTimeout(playTimeoutRef.current)
       playTimeoutRef.current = null
     }
     try {
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${currentDeviceId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("spotify_access_token")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          uris: [song.spotifyLink.replace("https://open.spotify.com/track/", "spotify:track:")],
-          position_ms: getStartTime(),
-        }),
-      })
+      await playTrack(
+        song.spotifyLink.replace("https://open.spotify.com/track/", "spotify:track:"),
+        getStartTime(),
+      )
       setPlaying(true)
       playTimeoutRef.current = setTimeout(async () => {
         playTimeoutRef.current = null

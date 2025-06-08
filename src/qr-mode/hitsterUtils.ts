@@ -1,4 +1,3 @@
-import type { SpotifyApi } from "@spotify/web-api-ts-sdk"
 import type { SongData } from "../contexts/SongContext"
 
 export function parseHitsterUrl(url: string): { lang: string; id: string } | null {
@@ -28,19 +27,15 @@ export function isHitsterLink(url: string): boolean {
 
 export async function playHitsterSongFromQr({
   qrResult,
-  spotifySdk,
-  selectedDeviceId,
+  playTrack,
   setPlayError,
   setSongAndPlaying,
-  logOut,
   position_ms = 30000, // default to 30s for backward compatibility
 }: {
   qrResult: string | null
-  spotifySdk: SpotifyApi | null
-  selectedDeviceId: string | null
+  playTrack: (trackUri: string, position_ms?: number) => Promise<void>
   setPlayError: (v: string | null) => void
   setSongAndPlaying: (song: SongData | null, playing: boolean) => void
-  logOut: () => void
   position_ms?: number
 }) {
   setPlayError(null)
@@ -80,42 +75,23 @@ export async function playHitsterSongFromQr({
     }
     const trackId = spotifyUrl.split("/track/")[1].split("?")[0]
     const trackUri = `spotify:track:${trackId}`
-    if (!spotifySdk) {
-      setPlayError("Spotify SDK not available. Please login.")
-      logOut()
-      return
+    // Use context's playTrack for playback
+    try {
+      await playTrack(trackUri, position_ms)
+      const song = {
+        id,
+        spotifyLink: `https://open.spotify.com/track/${trackId}`,
+        title: name,
+        artist,
+        year,
+      }
+      setSongAndPlaying(song, true)
+      // Let UI handle pause/timeout
+      return { trackUri }
+    } catch (err) {
+      setPlayError("Failed to play song via Spotify API.")
+      setSongAndPlaying(null, false)
     }
-    if (!selectedDeviceId) {
-      setPlayError("No Spotify device selected.")
-      return
-    }
-    // Play the song using Spotify API
-    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${selectedDeviceId}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("spotify_access_token")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        uris: [trackUri],
-        position_ms,
-      }),
-    })
-    const song = {
-      id,
-      spotifyLink: trackUri,
-      title: name,
-      artist,
-      year,
-    }
-    setSongAndPlaying(song, true)
-    const timeOut = setTimeout(async () => {
-      try {
-        await spotifySdk.player.pausePlayback(selectedDeviceId)
-      } catch (e) {}
-      setSongAndPlaying(song, false)
-    }, 10000)
-    return { trackUri, timeOut }
   } catch (err) {
     const errorMessage =
       err && typeof err === "object" && "message" in err

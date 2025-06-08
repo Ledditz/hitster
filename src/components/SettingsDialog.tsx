@@ -28,7 +28,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
       <SheetContent
         side="right"
         className="bg-gray-900 text-white shadow-2xl fixed right-0 top-0 h-full w-full max-w-sm rounded-none p-0 border-l border-gray-800 z-40"
+        aria-describedby="settings-desc"
       >
+        <span id="settings-desc" className="sr-only">
+          Settings dialog. Configure playback and device options.
+        </span>
         <SheetHeader className="p-6 pb-0">
           <SheetTitle className="text-white">Settings</SheetTitle>
         </SheetHeader>

@@ -115,18 +115,10 @@ function AppContent() {
             </div>
           )}
           {mode === "qr" && (
-            <QrMode
-              logOut={() => logOut(setIsLoggedIn, setSpotifySdk)}
-              playbackMode={playbackMode}
-              customStartTime={customStartTime}
-            />
+            <QrMode playbackMode={playbackMode} customStartTime={customStartTime} />
           )}
           {mode === "playlist" && (
-            <PlaylistMode
-              logOut={() => logOut(setIsLoggedIn, setSpotifySdk)}
-              playbackMode={playbackMode}
-              customStartTime={customStartTime}
-            />
+            <PlaylistMode playbackMode={playbackMode} customStartTime={customStartTime} />
           )}
 
           {mode !== null && (
