@@ -20,7 +20,7 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [mode, setMode] = useState<"qr" | "playlist" | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const { setSpotifySdk } = useSpotifyContext()
+  const { setSpotifySdk, setSong, setSelectedPlaylist } = useSpotifyContext()
 
   // Handle Spotify OAuth redirect
   useEffect(() => {
@@ -118,7 +118,11 @@ function AppContent() {
           {mode !== null && (
             <Header
               mode={mode}
-              onBack={() => setMode(null)}
+              onBack={() => {
+                setSong(null)
+                setSelectedPlaylist(null)
+                setMode(null)
+              }}
               onOpenSettings={() => setSettingsOpen((open) => !open)}
             />
           )}

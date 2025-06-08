@@ -103,7 +103,7 @@ export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center mt-8">
       {!scanning && (
         <button
           type="button"

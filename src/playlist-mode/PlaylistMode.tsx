@@ -19,7 +19,7 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = () => {
   } = useSpotifyContext()
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center mt-8">
       {!selectedPlaylist ? (
         <>
           <div className="mb-2">Select a playlist:</div>
@@ -40,8 +40,8 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = () => {
         </>
       ) : (
         <>
-          <div className="mb-2">
-            Selected playlist: <span className="font-bold">{selectedPlaylist.name}</span>
+          <div className="mb-4">
+            Activ playlist: <span className="font-bold">{selectedPlaylist.name}</span>
           </div>
           <PlayControls />
           <CollapsibleSongInfo />
