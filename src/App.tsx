@@ -55,11 +55,14 @@ function AppContent() {
         <AnimatedLogo />
       </div>
       <p className="text-2xl sm:text-4xl font-extrabold tracking-tight drop-shadow-lg mt-4 text-center">
-        Spotify QR Scanner
+        Songster
       </p>
-      <p className="text-base sm:text-lg text-gray-300 mb-3 -mt-1 text-center">
-        Connect to your music, instantly.
-      </p>
+      <div className="flex flex-col items-center w-full max-w-md mx-auto">
+        <span className="text-base sm:text-lg text-gray-300 mb-1 text-center block">
+          Your playlist, your game
+        </span>
+        <div className="w-24 border-t border-gray-500 my-1 mx-auto" />
+      </div>
       {!isLoggedIn ? (
         <div className="flex flex-col items-center w-full mt-5">
           <button
