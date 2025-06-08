@@ -1,11 +1,11 @@
 {
-  "name": "Hitster",
-  "short_name": "Hitster",
+  "name": "Songster",
+  "short_name": "Songster",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#242424",
   "theme_color": "#1db954",
-  "description": "Your music game as a PWA!",
+  "description": "Your playlist, your game!",
   "icons": [
     {
       "src": "app-icon.svg",
