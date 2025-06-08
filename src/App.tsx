@@ -14,10 +14,12 @@ import { PlaylistMode } from "./playlist-mode/PlaylistMode"
 import { SpotifyProvider, useSpotifyContext } from "./contexts/SongContext"
 import { GlobalToaster } from "./components/GlobalToaster"
 import { Header } from "./components/Header"
+import { SettingsDialog } from "./components/SettingsDialog"
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [mode, setMode] = useState<"qr" | "playlist" | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const { setSpotifySdk } = useSpotifyContext()
 
   // Handle Spotify OAuth redirect
@@ -113,7 +115,14 @@ function AppContent() {
             <PlaylistMode logOut={() => logOut(setIsLoggedIn, setSpotifySdk)} />
           )}
 
-          {mode !== null && <Header mode={mode} onBack={() => setMode(null)} />}
+          {mode !== null && (
+            <Header
+              mode={mode}
+              onBack={() => setMode(null)}
+              onOpenSettings={() => setSettingsOpen((open) => !open)}
+            />
+          )}
+          <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
         </>
       )}
     </div>

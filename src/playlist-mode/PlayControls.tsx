@@ -66,7 +66,6 @@ export const PlayControls: React.FC = () => {
         playSong={handlePlayRandomSong}
         replaySong={handleReplaySong}
         pauseSong={handlePause}
-        showDeviceSelect={true}
       />
     </>
   )

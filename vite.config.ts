@@ -29,4 +29,9 @@ export default defineConfig({
     }),
   ],
   base: "/hitster/",
+  resolve: {
+    alias: {
+      "@/components": "/home/lucas/git/hitster/src/components",
+    },
+  },
 })

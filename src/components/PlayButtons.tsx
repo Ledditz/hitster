@@ -1,6 +1,5 @@
 import type React from "react"
 import { useSpotifyContext } from "../contexts/SongContext"
-import { DeviceSelect } from "./DeviceSelect"
 import { FaPlay, FaPause, FaRedo } from "react-icons/fa"
 
 interface PlayButtonsProps {
@@ -8,7 +7,6 @@ interface PlayButtonsProps {
   playSong?: () => Promise<void>
   replaySong?: () => Promise<void>
   pauseSong?: () => Promise<void>
-  showDeviceSelect?: boolean
 }
 
 export const PlayButtons: React.FC<PlayButtonsProps> = ({
@@ -16,7 +14,6 @@ export const PlayButtons: React.FC<PlayButtonsProps> = ({
   playSong,
   pauseSong,
   replaySong,
-  showDeviceSelect = false,
 }) => {
   const { isPlaying } = useSpotifyContext()
 
@@ -42,7 +39,6 @@ export const PlayButtons: React.FC<PlayButtonsProps> = ({
           <FaRedo size={28} />
         </button>
       </div>
-      {showDeviceSelect && <DeviceSelect />}
     </div>
   )
 }

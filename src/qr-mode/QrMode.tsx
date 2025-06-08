@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react"
 import { useQrScanner } from "./qrScanner"
-import { DeviceSelect } from "../components/DeviceSelect"
 import { playHitsterSongFromQr } from "./hitsterUtils"
 import { useSpotifyContext } from "../contexts/SongContext"
 import { MdQrCode, MdClose } from "react-icons/md"
@@ -132,14 +131,9 @@ export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
         className={`my-4 aspect-square w-64 max-w-full ${scanning ? "" : "invisible"}`}
         style={{ height: scanning ? "auto" : "0px" }}
       />
-      <DeviceSelect />
       {barcodeError && <div className="text-red-400 mb-2">{barcodeError}</div>}
       {playError && <div className="text-red-400 mb-2">{playError}</div>}
-      <PlayButtons
-        replayEnabled={replayEnabled}
-        replaySong={handleReplaySong}
-        showDeviceSelect={false}
-      />
+      <PlayButtons replayEnabled={replayEnabled} replaySong={handleReplaySong} />
       {/* Collapsible Last Played Song Info */}
       <CollapsibleSongInfo />
     </div>
