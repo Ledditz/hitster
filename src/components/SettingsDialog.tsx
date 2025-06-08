@@ -4,9 +4,20 @@ import { DeviceSelect } from "@/components/DeviceSelect"
 interface SettingsDialogProps {
   open: boolean
   onClose: () => void
+  playbackMode: "beginning" | "custom" | "random"
+  setPlaybackMode: (mode: "beginning" | "custom" | "random") => void
+  customStartTime: number
+  setCustomStartTime: (n: number) => void
 }
 
-export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
+export const SettingsDialog: React.FC<SettingsDialogProps> = ({
+  open,
+  onClose,
+  playbackMode,
+  setPlaybackMode,
+  customStartTime,
+  setCustomStartTime,
+}) => {
   return (
     <Sheet
       open={open}
@@ -21,19 +32,61 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
         <SheetHeader className="p-6 pb-0">
           <SheetTitle className="text-white">Settings</SheetTitle>
         </SheetHeader>
-        {/* Add your settings form/controls here */}
-        <div className="text-gray-300 p-6 pt-2">
+        <div className="text-gray-300 p-6 pt-2 flex flex-col gap-6">
           <DeviceSelect />
+          {/* Playback Settings */}
+          <div className="flex flex-col gap-2">
+            <span className="font-semibold">Playback Start</span>
+            <div className="flex flex-col gap-2 w-full bg-gray-800 rounded-xl p-4 border border-gray-700">
+              <label className="flex items-center gap-3 cursor-pointer py-1 px-2 rounded-lg hover:bg-gray-700 transition">
+                <input
+                  type="radio"
+                  name="playbackMode"
+                  value="beginning"
+                  checked={playbackMode === "beginning"}
+                  onChange={() => setPlaybackMode("beginning")}
+                  className="accent-green-500 w-4 h-4"
+                />
+                <span className="text-sm">From beginning</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer py-1 px-2 rounded-lg hover:bg-gray-700 transition">
+                <input
+                  type="radio"
+                  name="playbackMode"
+                  value="custom"
+                  checked={playbackMode === "custom"}
+                  onChange={() => setPlaybackMode("custom")}
+                  className="accent-green-500 w-4 h-4"
+                />
+                <span className="text-sm">From second:</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={120}
+                  value={customStartTime}
+                  onChange={(e) => {
+                    const val = Number(e.target.value)
+                    setCustomStartTime(val > 120 ? 120 : val)
+                  }}
+                  className="w-16 px-2 py-1 rounded border border-gray-600 bg-gray-900 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500 disabled:opacity-60"
+                  disabled={playbackMode !== "custom"}
+                />
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer py-1 px-2 rounded-lg hover:bg-gray-700 transition">
+                <input
+                  type="radio"
+                  name="playbackMode"
+                  value="random"
+                  checked={playbackMode === "random"}
+                  onChange={() => setPlaybackMode("random")}
+                  className="accent-green-500 w-4 h-4"
+                />
+                <span className="text-sm">Random (0–90s)</span>
+              </label>
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
   )
 }
-
-// Add to your CSS (e.g. App.css or index.css):
-// .animate-slide-down { animation: slideDown 0.25s cubic-bezier(0.4,0,0.2,1); }
-// .animate-slide-up { animation: slideUp 0.2s cubic-bezier(0.4,0,0.2,1); }
-// @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-// @keyframes slideUp { from { transform: translateY(0); } to { transform: translateY(-100%); } }
-// .animate-slide-down-from-header { animation: slideDownFromHeader 0.25s cubic-bezier(0.4,0,0.2,1); }
-// @keyframes slideDownFromHeader { from { transform: translateY(-50%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

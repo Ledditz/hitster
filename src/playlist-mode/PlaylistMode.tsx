@@ -7,9 +7,15 @@ import { MdRefresh } from "react-icons/md"
 
 interface PlaylistModeProps {
   logOut: () => void
+  playbackMode: "beginning" | "custom" | "random"
+  customStartTime: number
 }
 
-export const PlaylistMode: React.FC<PlaylistModeProps> = () => {
+export const PlaylistMode: React.FC<PlaylistModeProps> = ({
+  logOut,
+  playbackMode,
+  customStartTime,
+}) => {
   const {
     selectedPlaylist,
     setSelectedPlaylist,
@@ -43,7 +49,7 @@ export const PlaylistMode: React.FC<PlaylistModeProps> = () => {
           <div className="mb-4">
             Activ playlist: <span className="font-bold">{selectedPlaylist.name}</span>
           </div>
-          <PlayControls />
+          <PlayControls playbackMode={playbackMode} customStartTime={customStartTime} />
           <CollapsibleSongInfo />
           <button
             type="button"

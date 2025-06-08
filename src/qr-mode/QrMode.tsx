@@ -9,9 +9,11 @@ import CollapsibleSongInfo from "../components/CollapsibleSongInfo"
 
 interface QrModeProps {
   logOut: () => void
+  playbackMode: "beginning" | "custom" | "random"
+  customStartTime: number
 }
 
-export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
+export const QrMode: React.FC<QrModeProps> = ({ logOut, playbackMode, customStartTime }) => {
   const { scanning, qrResult, barcodeError, startQrScanner, cancelQrScanner } = useQrScanner()
   const { spotifySdk, setPlaying, setSongAndPlaying, song, currentDeviceId, pauseCurrentPlay } =
     useSpotifyContext()
@@ -36,6 +38,7 @@ export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
         setPlayError,
         logOut,
         setSongAndPlaying,
+        position_ms: getStartTime(), // use selected playback mode
       })
       if (result?.trackUri) {
         setReplayEnabled(true)
@@ -66,6 +69,14 @@ export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
     checkAuth()
   }, [spotifySdk, logOut])
 
+  // Helper to get start time based on mode
+  const getStartTime = () => {
+    if (playbackMode === "beginning") return 0
+    if (playbackMode === "custom") return customStartTime * 1000
+    // random between 0 and 90 seconds
+    return Math.floor(Math.random() * 90_000)
+  }
+
   // Handler for replaying the last played song using SongContext
   const handleReplaySong = async () => {
     if (!spotifySdk || !song) return
@@ -83,7 +94,7 @@ export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
         },
         body: JSON.stringify({
           uris: [song.spotifyLink.replace("https://open.spotify.com/track/", "spotify:track:")],
-          position_ms: 30000,
+          position_ms: getStartTime(),
         }),
       })
       setPlaying(true)
@@ -104,6 +115,8 @@ export const QrMode: React.FC<QrModeProps> = ({ logOut }) => {
 
   return (
     <div className="flex flex-col items-center mt-8">
+      {/* Playback Settings moved to SettingsDialog */}
+      {/* Remove playback settings UI from here */}
       {!scanning && (
         <button
           type="button"

@@ -33,6 +33,7 @@ export async function playHitsterSongFromQr({
   setPlayError,
   setSongAndPlaying,
   logOut,
+  position_ms = 30000, // default to 30s for backward compatibility
 }: {
   qrResult: string | null
   spotifySdk: SpotifyApi | null
@@ -40,6 +41,7 @@ export async function playHitsterSongFromQr({
   setPlayError: (v: string | null) => void
   setSongAndPlaying: (song: SongData | null, playing: boolean) => void
   logOut: () => void
+  position_ms?: number
 }) {
   setPlayError(null)
   if (!qrResult) return
@@ -96,7 +98,7 @@ export async function playHitsterSongFromQr({
       },
       body: JSON.stringify({
         uris: [trackUri],
-        position_ms: 30000,
+        position_ms,
       }),
     })
     const song = {

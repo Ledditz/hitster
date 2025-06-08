@@ -22,6 +22,10 @@ function AppContent() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { setSpotifySdk, setSong, setSelectedPlaylist } = useSpotifyContext()
 
+  // Playback settings state for QR mode
+  const [playbackMode, setPlaybackMode] = useState<"beginning" | "custom" | "random">("beginning")
+  const [customStartTime, setCustomStartTime] = useState(0)
+
   // Handle Spotify OAuth redirect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -110,9 +114,19 @@ function AppContent() {
               </button>
             </div>
           )}
-          {mode === "qr" && <QrMode logOut={() => logOut(setIsLoggedIn, setSpotifySdk)} />}
+          {mode === "qr" && (
+            <QrMode
+              logOut={() => logOut(setIsLoggedIn, setSpotifySdk)}
+              playbackMode={playbackMode}
+              customStartTime={customStartTime}
+            />
+          )}
           {mode === "playlist" && (
-            <PlaylistMode logOut={() => logOut(setIsLoggedIn, setSpotifySdk)} />
+            <PlaylistMode
+              logOut={() => logOut(setIsLoggedIn, setSpotifySdk)}
+              playbackMode={playbackMode}
+              customStartTime={customStartTime}
+            />
           )}
 
           {mode !== null && (
@@ -126,7 +140,14 @@ function AppContent() {
               onOpenSettings={() => setSettingsOpen((open) => !open)}
             />
           )}
-          <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+          <SettingsDialog
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            playbackMode={playbackMode}
+            setPlaybackMode={setPlaybackMode}
+            customStartTime={customStartTime}
+            setCustomStartTime={setCustomStartTime}
+          />
         </>
       )}
     </div>
