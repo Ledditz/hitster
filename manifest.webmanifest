@@ -1,0 +1,1 @@
+{"name":"Hitster","short_name":"Hitster","description":"Your music game as a PWA!","start_url":".","display":"standalone","background_color":"#ffffff","theme_color":"#1db954","lang":"en","scope":"/hitster/","icons":[{"src":"app-icon.svg","sizes":"192x192","type":"image/svg+xml"}]}
