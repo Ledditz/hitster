@@ -48,10 +48,15 @@ export async function playHitsterSongFromQr({
   }
   // Remove leading zeros from id for CSV match
   const parsedId = parsed.id.replace(/^0+/, "")
-  // Only support German deck for now
-  const csvUrl = "/hitster/hitster-de-aaaa0015.csv"
+  const csvUrl = `/hitster/hitster-${parsed.lang}.csv`
+  // const csvUrl = "/hitster/hitster-de-aaaa0015.csv"
+
   try {
     const response = await fetch(csvUrl)
+    if (!response.ok) {
+      setPlayError(`No CSV found under: ${csvUrl}`)
+      return
+    }
     const csvText = await response.text()
     // Find the row with the correct id
     const lines = csvText.split(/\r?\n/).filter(Boolean)

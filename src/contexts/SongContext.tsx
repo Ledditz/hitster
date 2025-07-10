@@ -33,6 +33,7 @@ interface SpotifyContextType {
   playRandomSong: () => Promise<void>
   pauseCurrentPlay: () => Promise<void>
   loadPlaylists: () => Promise<void>
+  loadDevices: () => Promise<void>
 }
 
 const SpotifyContext = createContext<SpotifyContextType | undefined>(undefined)
@@ -250,6 +251,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         playRandomSong,
         pauseCurrentPlay, // Expose pause
         loadPlaylists: fetchPlaylists,
+        loadDevices: fetchDevices, // Expose loading functions
       }}
     >
       {children}

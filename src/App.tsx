@@ -15,6 +15,7 @@ import { SpotifyProvider, useSpotifyContext } from "./contexts/SongContext"
 import { GlobalToaster } from "./components/GlobalToaster"
 import { Header } from "./components/Header"
 import { SettingsDialog } from "./components/SettingsDialog"
+// import { handleProcessCsv } from "./csvToSpotify"
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -82,7 +83,13 @@ function AppContent() {
       ) : (
         <>
           {/* Add CSV process button for testing */}
-          {/* <button onClick={handleProcessCsv} className="mb-4 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow transition">Process CSV & Log</button> */}
+          {/* <button
+            onClick={() => handleProcessCsv(spotifySdk)}
+            type="button"
+            className="mb-4 px-4 py-2 rounded bg-yellow-500 hover:bg-yellow-600 text-white font-semibold shadow transition"
+          >
+            Process CSV & Log
+          </button> */}
           {/* {showSuccess && (
             <div className="text-green-400 mb-4 font-medium text-center">
               Successfully logged in to Spotify!
