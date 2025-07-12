@@ -8,7 +8,6 @@ export const PlayControls: React.FC<{
 }> = ({ playbackMode, customStartTime }) => {
   const { playRandomSong, playTrack, setPlaying, song, pauseCurrentPlay } = useSpotifyContext()
   const [replayEnabled, setReplayEnabled] = React.useState(false)
-  const playTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   // Store the last used start time for replay
   const [lastStartTime, setLastStartTime] = React.useState<number>(0)
 
@@ -22,10 +21,6 @@ export const PlayControls: React.FC<{
 
   // Pause playback on the active device
   const handlePause = async () => {
-    if (playTimeoutRef.current) {
-      clearTimeout(playTimeoutRef.current)
-      playTimeoutRef.current = null
-    }
     if (pauseCurrentPlay) {
       await pauseCurrentPlay()
     }
@@ -48,15 +43,6 @@ export const PlayControls: React.FC<{
     // @ts-ignore: playRandomSong now accepts position_ms
     await playRandomSong(startTime)
     setReplayEnabled(true)
-    if (playTimeoutRef.current) {
-      clearTimeout(playTimeoutRef.current)
-    }
-    playTimeoutRef.current = setTimeout(async () => {
-      playTimeoutRef.current = null
-      if (pauseCurrentPlay) {
-        await pauseCurrentPlay()
-      }
-    }, 10000)
   }
 
   // Replay last played song
@@ -72,25 +58,7 @@ export const PlayControls: React.FC<{
           : 0
     // @ts-ignore: playTrack now accepts position_ms
     await playTrack(song.spotifyLink, startTime)
-    if (playTimeoutRef.current) {
-      clearTimeout(playTimeoutRef.current)
-    }
-    playTimeoutRef.current = setTimeout(async () => {
-      playTimeoutRef.current = null
-      if (pauseCurrentPlay) {
-        await pauseCurrentPlay()
-      }
-    }, 10000)
   }
-
-  React.useEffect(() => {
-    return () => {
-      if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current)
-        playTimeoutRef.current = null
-      }
-    }
-  }, [])
 
   return (
     <>

@@ -1,5 +1,5 @@
 import type React from "react"
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import type { Device, SimplifiedPlaylist, SpotifyApi, TrackItem } from "@spotify/web-api-ts-sdk"
 import { toast } from "sonner"
 import { logOut as globalLogOut } from "../utils/spotifyAuth"
@@ -22,6 +22,7 @@ interface SpotifyContextType {
   currentDeviceId: string | null
   isLoadingPlaylists: boolean
   isLoadingDevices: boolean
+  playbackTime: number
   setCurrentDevice: (deviceId: string | null) => Promise<void>
   setSong: (song: SongData | null) => void
   setSongAndPlaying: (song: SongData | null, isPlaying: boolean) => void
@@ -34,6 +35,7 @@ interface SpotifyContextType {
   pauseCurrentPlay: () => Promise<void>
   loadPlaylists: () => Promise<void>
   loadDevices: () => Promise<void>
+  setPlaybackTime: (newPlayBackTime: number) => void
 }
 
 const SpotifyContext = createContext<SpotifyContextType | undefined>(undefined)
@@ -54,6 +56,8 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null)
   const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false)
   const [isLoadingDevices, setIsLoadingDevices] = useState(false)
+  const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [playbackTime, setPlaybackTime] = useState(10000)
 
   const fetchPlaylists = async () => {
     try {
@@ -165,6 +169,10 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Play a track by URI
   const playTrack = useCallback(
     async (trackUri: string, position_ms = 30000) => {
+      if (playTimeoutRef.current) {
+        clearTimeout(playTimeoutRef.current)
+        playTimeoutRef.current = null
+      }
       if (!spotifySdk || !currentDeviceId) return
       await callSpotifyApi(async () => {
         await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${currentDeviceId}`, {
@@ -176,8 +184,15 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           body: JSON.stringify({ uris: [trackUri], position_ms }),
         })
       })
+      setIsPlaying(true)
+      playTimeoutRef.current = setTimeout(async () => {
+        playTimeoutRef.current = null
+        if (pauseCurrentPlay) {
+          await pauseCurrentPlay()
+        }
+      }, playbackTime)
     },
-    [spotifySdk, currentDeviceId, callSpotifyApi],
+    [spotifySdk, currentDeviceId, playbackTime, callSpotifyApi],
   )
 
   // Play random song from selected playlist
@@ -240,6 +255,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         availableDevices,
         isLoadingPlaylists,
         isLoadingDevices,
+        playbackTime,
         setCurrentDevice: setDevice,
         setSong,
         setSongAndPlaying,
@@ -252,6 +268,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         pauseCurrentPlay, // Expose pause
         loadPlaylists: fetchPlaylists,
         loadDevices: fetchDevices, // Expose loading functions
+        setPlaybackTime,
       }}
     >
       {children}

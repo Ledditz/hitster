@@ -14,9 +14,8 @@ interface QrModeProps {
 
 export const QrMode: React.FC<QrModeProps> = ({ playbackMode, customStartTime }) => {
   const { scanning, qrResult, startQrScanner, cancelQrScanner } = useQrScanner()
-  const { playTrack, setPlaying, setSongAndPlaying, song, pauseCurrentPlay } = useSpotifyContext()
+  const { playTrack, setSongAndPlaying, song, pauseCurrentPlay } = useSpotifyContext()
   const [replayEnabled, setReplayEnabled] = useState(false)
-  const playTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Helper to get start time based on mode
   const getStartTime = React.useCallback(() => {
@@ -28,10 +27,6 @@ export const QrMode: React.FC<QrModeProps> = ({ playbackMode, customStartTime })
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     const handlePlay = async () => {
-      if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current)
-        playTimeoutRef.current = null
-      }
       if (!qrResult) return
 
       const scannedSong = await getSongFromHitsterUrl(qrResult)
@@ -42,14 +37,7 @@ export const QrMode: React.FC<QrModeProps> = ({ playbackMode, customStartTime })
       try {
         await playTrack(scannedSong.spotifyLink, getStartTime())
         setSongAndPlaying(scannedSong, true)
-        setPlaying(true)
         setReplayEnabled(true)
-        playTimeoutRef.current = setTimeout(async () => {
-          playTimeoutRef.current = null
-          if (pauseCurrentPlay) {
-            await pauseCurrentPlay()
-          }
-        }, 10000)
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         toast.error(`Failed to play song: ${errorMessage}`)
@@ -63,19 +51,8 @@ export const QrMode: React.FC<QrModeProps> = ({ playbackMode, customStartTime })
   // Handler for replaying the last played song using SongContext
   const handleReplaySong = async () => {
     if (!song) return
-    if (playTimeoutRef.current) {
-      clearTimeout(playTimeoutRef.current)
-      playTimeoutRef.current = null
-    }
     try {
       await playTrack(song.spotifyLink, getStartTime())
-      setPlaying(true)
-      playTimeoutRef.current = setTimeout(async () => {
-        playTimeoutRef.current = null
-        if (pauseCurrentPlay) {
-          await pauseCurrentPlay()
-        }
-      }, 10000)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err)
       toast.error(`Failed to replay song: ${errorMessage}`)
@@ -92,7 +69,11 @@ export const QrMode: React.FC<QrModeProps> = ({ playbackMode, customStartTime })
       <Scanner startScan={startQrScanner} cancleScan={cancelQrScanner} isScanning={scanning} />
       {!scanning && (
         <>
-          <PlayButtons replayEnabled={replayEnabled} replaySong={handleReplaySong} />
+          <PlayButtons
+            replayEnabled={replayEnabled}
+            replaySong={handleReplaySong}
+            pauseSong={pauseCurrentPlay}
+          />
           {/* Collapsible Last Played Song Info */}
           <CollapsibleSongInfo />
         </>

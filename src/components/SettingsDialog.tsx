@@ -1,5 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { DeviceSelect } from "@/components/DeviceSelect"
+import { useSpotifyContext } from "../contexts/SongContext"
 
 interface SettingsDialogProps {
   open: boolean
@@ -18,6 +19,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   customStartTime,
   setCustomStartTime,
 }) => {
+  const { playbackTime, setPlaybackTime } = useSpotifyContext()
   return (
     <Sheet
       open={open}
@@ -87,6 +89,27 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 />
                 <span className="text-sm">Random (0–90s)</span>
               </label>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="font-semibold">Playback Duration</span>
+            <div className="flex flex-col gap-2 w-full bg-gray-800 rounded-xl p-4 border border-gray-700">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Duration:</span>
+                <span className="text-sm font-medium">{playbackTime / 1000}s</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={30}
+                step={1}
+                value={playbackTime / 1000}
+                onChange={(e) => {
+                  const val = Number(e.target.value)
+                  setPlaybackTime(val * 1000)
+                }}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:appearance-none"
+              />
             </div>
           </div>
         </div>
