@@ -1,4 +1,4 @@
-import type { SongData } from "../contexts/SongContext"
+import type { SongData } from "../../contexts/SongContext"
 
 export function parseHitsterUrl(url: string): { lang: string; id: string } | null {
   const regex = /^(?:http:\/\/|https:\/\/)?www\.hitstergame\.com\/(.+?)\/(\d+)$/

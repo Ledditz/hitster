@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { useQrScanner } from "./qrScanner"
-import { playHitsterSongFromQr } from "./hitsterUtils"
+import { useQrScanner } from "./utils/useQrScanner"
+import { playHitsterSongFromQr } from "./utils/hitsterUtils"
 import { useSpotifyContext } from "../contexts/SongContext"
 import { MdQrCode, MdClose } from "react-icons/md"
 import { PlayButtons } from "../components/PlayButtons"
