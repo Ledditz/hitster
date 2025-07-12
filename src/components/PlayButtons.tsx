@@ -20,15 +20,17 @@ export const PlayButtons: React.FC<PlayButtonsProps> = ({
   return (
     <div className="flex flex-col items-center gap-2 mb-4">
       <div className="flex gap-4">
-        <button
-          type="button"
-          onClick={isPlaying ? pauseSong : playSong}
-          disabled={isPlaying && !pauseSong}
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white shadow transition focus:outline-none focus:ring-2 focus:ring-green-400"
-          aria-label={isPlaying ? "Pause" : "Play Song"}
-        >
-          {isPlaying ? <FaPause size={28} /> : <FaPlay size={28} />}
-        </button>
+        {(playSong || pauseSong) && (
+          <button
+            type="button"
+            onClick={isPlaying ? pauseSong : playSong}
+            disabled={isPlaying && !pauseSong}
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-green-600 hover:bg-green-700 disabled:bg-gray-500 text-white shadow transition focus:outline-none focus:ring-2 focus:ring-green-400"
+            aria-label={isPlaying ? "Pause" : "Play Song"}
+          >
+            {isPlaying ? <FaPause size={28} /> : <FaPlay size={28} />}
+          </button>
+        )}
         <button
           type="button"
           onClick={replaySong}

@@ -1,24 +1,24 @@
 // Handles QR scanner logic
 import QrScanner from "qr-scanner"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export function useQrScanner() {
   const [scanning, setScanning] = useState(false)
   const [qrResult, setQrResult] = useState<string | null>(null)
   const [qrScannerInstance, setQrScannerInstance] = useState<QrScanner | null>(null)
   const [qrVideoRef, setQrVideoRef] = useState<HTMLVideoElement | null>(null)
-  const [barcodeError, setBarcodeError] = useState<string | null>(null)
 
   const startQrScanner = () => {
     setScanning(true)
     setQrResult(null)
-    setBarcodeError(null)
     if (qrScannerInstance) {
       qrScannerInstance.destroy()
       setQrScannerInstance(null)
     }
     let videoElem = document.getElementById("qr-video") as HTMLVideoElement | null
     if (!videoElem) {
+      toast.info("added video element")
       videoElem = document.createElement("video")
       videoElem.id = "qr-video"
       videoElem.style.width = "300px"
@@ -43,7 +43,7 @@ export function useQrScanner() {
     )
     setQrScannerInstance(scanner)
     scanner.start().catch((err) => {
-      setBarcodeError(`Failed to start qr-scanner: ${err}`)
+      toast.error(`Failed to start qr-scanner: ${err}`)
       setScanning(false)
     })
   }
@@ -56,7 +56,6 @@ export function useQrScanner() {
     }
     setScanning(false)
     if (qrVideoRef) {
-      qrVideoRef.remove()
       setQrVideoRef(null)
     }
   }
@@ -64,7 +63,6 @@ export function useQrScanner() {
   return {
     scanning,
     qrResult,
-    barcodeError,
     startQrScanner,
     cancelQrScanner,
   }

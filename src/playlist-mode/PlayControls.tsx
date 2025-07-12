@@ -1,7 +1,6 @@
 import React from "react"
 import { useSpotifyContext } from "../contexts/SongContext"
 import { PlayButtons } from "../components/PlayButtons"
-import { toast } from "sonner"
 
 export const PlayControls: React.FC<{
   playbackMode: "beginning" | "custom" | "random"
@@ -72,10 +71,7 @@ export const PlayControls: React.FC<{
           ? Math.min(customStartTime, 120) * 1000
           : 0
     // @ts-ignore: playTrack now accepts position_ms
-    await playTrack(
-      song.spotifyLink.replace("https://open.spotify.com/track/", "spotify:track:"),
-      startTime,
-    )
+    await playTrack(song.spotifyLink, startTime)
     if (playTimeoutRef.current) {
       clearTimeout(playTimeoutRef.current)
     }
@@ -85,16 +81,6 @@ export const PlayControls: React.FC<{
         await pauseCurrentPlay()
       }
     }, 10000)
-  }
-
-  // Open song in Spotify app
-  const handleOpenInSpotify = () => {
-    if (!song) {
-      toast.error("No song selected")
-      return
-    }
-    const spotifyUri = `spotify:track:${song.spotifyLink.split("/track/")[1]}`
-    window.location.href = spotifyUri
   }
 
   React.useEffect(() => {
@@ -114,15 +100,6 @@ export const PlayControls: React.FC<{
         replaySong={handleReplaySong}
         pauseSong={handlePause}
       />
-      {song && (
-        <button
-          type="button"
-          onClick={handleOpenInSpotify}
-          className="mt-2 px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-        >
-          Open in Spotify App
-        </button>
-      )}
     </>
   )
 }

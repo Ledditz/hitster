@@ -1,4 +1,4 @@
-import type { SongData } from "../../contexts/SongContext"
+import { toast } from "sonner"
 
 export function parseHitsterUrl(url: string): { lang: string; id: string } | null {
   const regex = /^(?:http:\/\/|https:\/\/)?www\.hitstergame\.com\/(.+?)\/(\d+)$/
@@ -25,25 +25,12 @@ export function isHitsterLink(url: string): boolean {
   return regex.test(url)
 }
 
-export async function playHitsterSongFromQr({
-  qrResult,
-  playTrack,
-  setPlayError,
-  setSongAndPlaying,
-  position_ms = 30000, // default to 30s for backward compatibility
-}: {
-  qrResult: string | null
-  playTrack: (trackUri: string, position_ms?: number) => Promise<void>
-  setPlayError: (v: string | null) => void
-  setSongAndPlaying: (song: SongData | null, playing: boolean) => void
-  position_ms?: number
-}) {
-  setPlayError(null)
-  if (!qrResult) return
-  if (!isHitsterLink(qrResult)) return
-  const parsed = parseHitsterUrl(qrResult)
+export async function getSongFromHitsterUrl(url: string) {
+  if (!url) return null
+  if (!isHitsterLink(url)) return null
+  const parsed = parseHitsterUrl(url)
   if (!parsed) {
-    setPlayError("Invalid Hitster QR link.")
+    toast.error("Invalid Hitster QR link.")
     return
   }
   // Remove leading zeros from id for CSV match
@@ -54,7 +41,7 @@ export async function playHitsterSongFromQr({
   try {
     const response = await fetch(csvUrl)
     if (!response.ok) {
-      setPlayError(`No CSV found under: ${csvUrl}`)
+      toast.error(`No CSV found under: ${csvUrl}`)
       return
     }
     const csvText = await response.text()
@@ -70,39 +57,29 @@ export async function playHitsterSongFromQr({
       }
     }
     if (!found) {
-      setPlayError("Song not found in CSV.")
+      toast.error("Song not found in CSV.")
       return
     }
     const [id, name, artist, year, spotifyUrl] = found
     if (!spotifyUrl || !spotifyUrl.startsWith("https://open.spotify.com/track/")) {
-      setPlayError("No Spotify link found for this song.")
+      toast.error("No Spotify link found for this song.")
       return
     }
     const trackId = spotifyUrl.split("/track/")[1].split("?")[0]
     const trackUri = `spotify:track:${trackId}`
-    // Use context's playTrack for playback
-    try {
-      await playTrack(trackUri, position_ms)
-      const song = {
-        id,
-        spotifyLink: `https://open.spotify.com/track/${trackId}`,
-        title: name,
-        artist,
-        year,
-      }
-      setSongAndPlaying(song, true)
-      // Let UI handle pause/timeout
-      return { trackUri }
-    } catch (err) {
-      setPlayError("Failed to play song via Spotify API.")
-      setSongAndPlaying(null, false)
+    return {
+      id,
+      spotifyLink: trackUri,
+      title: name,
+      artist,
+      year,
     }
   } catch (err) {
     const errorMessage =
       err && typeof err === "object" && "message" in err
         ? (err as { message: string }).message
         : String(err)
-    setPlayError(`Failed to play song: ${errorMessage}`)
-    setSongAndPlaying(null, false)
+    toast.error(`Failed to get song: ${errorMessage}`)
   }
+  return null
 }

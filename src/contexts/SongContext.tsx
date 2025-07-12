@@ -195,7 +195,7 @@ export const SpotifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSongAndPlaying(
           {
             id: randomTrack.id,
-            spotifyLink: `https://open.spotify.com/track/${randomTrack.id}`,
+            spotifyLink: `spotify:track:${randomTrack.id}`,
             artist:
               (randomTrack.type === "track" &&
                 "artists" in randomTrack &&

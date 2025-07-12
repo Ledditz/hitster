@@ -57,7 +57,7 @@ function AppContent() {
   }, [isLoggedIn, setSpotifySdk])
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white pt-20 sm:pt-20 px-2 sm:px-4 flex flex-col items-stretch w-full">
+    <div className="min-h-screen bg-gray-900 text-white pt-25 sm:pt-25 px-2 sm:px-4 flex flex-col items-stretch w-full">
       <div className="flex flex-col items-center w-full">
         <AnimatedLogo />
       </div>
